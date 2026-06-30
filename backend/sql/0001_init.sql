@@ -22,7 +22,7 @@ create table if not exists save_objects (
   schema_version int  not null default 1,
   checksum       text not null default '',
   updated_unix   bigint not null default 0,
-  object_key     text not null,   -- R2 object key
+  blob_url       text not null,   -- Vercel Blob URL
   primary key (account_id, slot)
 );
 
