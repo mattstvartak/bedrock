@@ -1,5 +1,5 @@
-import { sql } from "./db";
-import { verifySession } from "./jwt";
+import { sql } from "./db.js";
+import { verifySession } from "./jwt.js";
 
 // Validate a platform token and return a stable platform id, or null.
 export async function validatePlatformToken(

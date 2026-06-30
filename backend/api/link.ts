@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { randomBytes } from "crypto";
-import { sql } from "../lib/db";
-import { accountFromAuthHeader } from "../lib/auth";
-import { mintSession } from "../lib/jwt";
+import { sql } from "../lib/db.js";
+import { accountFromAuthHeader } from "../lib/auth.js";
+import { mintSession } from "../lib/jwt.js";
 
 // Opt-in cross-platform account merge via a short code (Helldivers/Fortnite
 // style). Device A issues a code; device B redeems it, merging B's platform

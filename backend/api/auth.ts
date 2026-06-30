@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { validatePlatformToken, upsertAccount } from "../lib/auth";
-import { mintSession } from "../lib/jwt";
+import { validatePlatformToken, upsertAccount } from "../lib/auth.js";
+import { mintSession } from "../lib/jwt.js";
 
 // POST /api/auth  { platform, token }  -> { session, account_id }
 // Silent platform SSO: validate the token, mint-or-fetch the canonical account,
