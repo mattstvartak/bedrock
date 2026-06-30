@@ -11,6 +11,8 @@ const AUTOLOADS := {
 	"Audio": "res://addons/bedrock/api/audio_api.gd",
 	"Settings": "res://addons/bedrock/api/settings_api.gd",
 	"Scenes": "res://addons/bedrock/api/scene_api.gd",
+	"Controls": "res://addons/bedrock/api/input_api.gd",
+	"Locale": "res://addons/bedrock/api/locale_api.gd",
 	"Identity": "res://addons/bedrock/api/identity_api.gd",
 	"Save": "res://addons/bedrock/api/save_api.gd",
 	"Net": "res://addons/bedrock/api/net_api.gd",
