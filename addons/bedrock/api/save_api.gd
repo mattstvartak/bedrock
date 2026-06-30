@@ -36,6 +36,21 @@ func read(slot: int = 0) -> void:
 	CoreEvents.save_loaded.emit(slot)
 
 
+func has_slot(slot: int = 0) -> bool:
+	return slot in list_slots()
+
+
+func list_slots() -> Array:
+	var backend = _resolve()
+	return backend.list_slots() if backend else []
+
+
+func delete(slot: int = 0) -> void:
+	var backend = _resolve()
+	if backend:
+		backend.delete(slot)
+
+
 func _capture() -> Dictionary:
 	var out: Dictionary = {}
 	for id in _saveables:

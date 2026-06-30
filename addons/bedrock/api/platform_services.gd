@@ -16,13 +16,21 @@ const ACHIEVEMENTS := &"achievements"
 const STORE := &"store"
 const VOICE := &"voice"
 
+const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
+
 var target: Target = Target.STANDALONE
+
+## A game sets this directly, or ships one at res://game_config.tres. Defaults
+## are used if neither is present.
+var config: GameConfig
 
 var _backends: Dictionary = {}  ## StringName -> Object (interface impl)
 
 
 func _ready() -> void:
 	target = detect_target()
+	if config == null:
+		config = _load_config()
 	_bootstrap()
 
 
@@ -36,11 +44,20 @@ func detect_target() -> Target:
 	return Target.STANDALONE
 
 
-## Instantiate and bind the backends for this target. Empty until the modules
-## (identity, save, net, ...) land; each will bind its impl here behind its
-## interface. Facades resolve lazily, so binding can also happen after _ready.
+func _load_config() -> GameConfig:
+	var path := "res://game_config.tres"
+	if ResourceLoader.exists(path):
+		return load(path) as GameConfig
+	return GameConfig.new()
+
+
+## Instantiate and bind the platform-divergent backends (save, identity, net,
+## ...) for this target + config. The self-contained services (audio, settings,
+## scenes, input, locale) are their own autoloads and don't bind here. Facades
+## resolve lazily, so a backend can also be bound after _ready.
 func _bootstrap() -> void:
-	pass
+	if config.enable_save:
+		bind(SAVE, _LocalSaveBackend.new())
 
 
 func bind(key: StringName, impl: Object) -> void:
