@@ -51,6 +51,10 @@ scripts/dev.sh     # open the editor with secrets injected
 
 First time on a new machine: `doppler login` then `doppler setup`.
 
+For the online features (identity, net, lobbies, voice, achievements), fetch the
+GD-EOS extension once: `scripts/fetch-eos.sh`. It's a ~76MB binary, gitignored,
+not vendored. Single-player games that disable multiplayer don't need it.
+
 ## Status
 
 `0.1.0` — scaffold. Public surface and the locator are in place; the modules
