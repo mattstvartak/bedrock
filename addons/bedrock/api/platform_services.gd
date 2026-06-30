@@ -17,7 +17,7 @@ const STORE := &"store"
 const VOICE := &"voice"
 const SOCIAL := &"social"
 
-const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
+const _CloudSaveBackend := preload("res://addons/bedrock/_internal/save/cloud_save_backend.gd")
 const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd")
 const _EOSConnectIdentity := preload("res://addons/bedrock/_internal/identity/eos_connect_identity.gd")
 const _EOS_GATEWAY_PATH := "res://addons/bedrock/_internal/eos/eos_gateway.gd"
@@ -62,7 +62,11 @@ func _load_config() -> GameConfig:
 ## resolve lazily, so a backend can also be bound after _ready.
 func _bootstrap() -> void:
 	if config.enable_save:
-		bind(SAVE, _LocalSaveBackend.new())
+		# Local-first; syncs to the canonical cloud when a backend URL + session
+		# are configured, otherwise pure local. A child node (it hosts HTTP).
+		var save_backend: Node = _CloudSaveBackend.new()
+		add_child(save_backend)
+		bind(SAVE, save_backend)
 
 	# Networking: ENet local always, EOS online when the addon is present. The
 	# backend is a child node so it can hook the multiplayer peer signals.
