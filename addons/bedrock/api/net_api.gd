@@ -54,6 +54,18 @@ func current_lobby_id() -> String:
 	return b.current_lobby_id() if b else ""
 
 
+# --- Voice (EOS RTC, on the current lobby's room) ---
+
+func set_muted(muted: bool) -> bool:
+	var b = _resolve()
+	return b.set_muted(muted) if b else false
+
+
+func set_player_volume(participant_id, volume: float) -> bool:
+	var b = _resolve()
+	return b.set_player_volume(participant_id, volume) if b else false
+
+
 func is_host() -> bool:
 	var b = _resolve()
 	return b.is_host() if b else false

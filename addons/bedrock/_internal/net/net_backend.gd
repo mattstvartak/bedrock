@@ -9,10 +9,12 @@ extends Node
 
 const _EOS_NET_PATH := "res://addons/bedrock/_internal/net/eos_net.gd"
 const _EOS_LOBBY_PATH := "res://addons/bedrock/_internal/net/eos_lobby.gd"
+const _EOS_VOICE_PATH := "res://addons/bedrock/_internal/voice/eos_voice.gd"
 const _DEFAULT_PORT := 7777
 
 var _eos_net = null
 var _eos_lobby = null
+var _eos_voice = null
 var _is_host := false
 var _active := false  # a real session is up (Godot keeps an offline peer otherwise)
 
@@ -95,6 +97,22 @@ func current_lobby_id() -> String:
 	return _eos_lobby.current_lobby_id() if _eos_lobby != null else ""
 
 
+# --- Voice (EOS RTC, on the current lobby's room) ---
+
+func set_muted(muted: bool) -> bool:
+	var voice = _ensure_eos_voice()
+	if voice == null:
+		return false
+	return voice.set_muted(current_lobby_id(), muted)
+
+
+func set_player_volume(participant_id, volume: float) -> bool:
+	var voice = _ensure_eos_voice()
+	if voice == null:
+		return false
+	return voice.set_participant_volume(current_lobby_id(), participant_id, volume)
+
+
 # --- Shared ---
 
 func leave() -> void:
@@ -124,3 +142,9 @@ func _ensure_eos_lobby():
 	if _eos_lobby == null and ClassDB.class_exists("EOSLobby"):
 		_eos_lobby = load(_EOS_LOBBY_PATH).new()
 	return _eos_lobby
+
+
+func _ensure_eos_voice():
+	if _eos_voice == null and ClassDB.class_exists("EOSRTCAudio"):
+		_eos_voice = load(_EOS_VOICE_PATH).new()
+	return _eos_voice
