@@ -16,6 +16,7 @@ const AUTOLOADS := {
 	"Identity": "res://addons/bedrock/api/identity_api.gd",
 	"Save": "res://addons/bedrock/api/save_api.gd",
 	"Net": "res://addons/bedrock/api/net_api.gd",
+	"Achievements": "res://addons/bedrock/api/achievements_api.gd",
 }
 
 
