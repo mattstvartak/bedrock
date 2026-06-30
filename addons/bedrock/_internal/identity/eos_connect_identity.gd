@@ -9,6 +9,7 @@ extends IIdentityProvider
 var _gateway
 var _account: AccountInfo = null
 var _logged_in := false
+var _anonymous := true
 
 
 func _init(gateway: Node) -> void:
@@ -27,7 +28,16 @@ func current_account():
 func login() -> void:
 	if _gateway == null:
 		return
+	_anonymous = true
 	_gateway.login_device_id("Player")
+
+
+## Steam login: the game supplies a Steam session ticket (from GodotSteam).
+func login_steam(ticket: String) -> void:
+	if _gateway == null:
+		return
+	_anonymous = false
+	_gateway.login_steam(ticket)
 
 
 func logout() -> void:
@@ -41,7 +51,7 @@ func _on_login_completed(ok: bool, puid: String) -> void:
 	if ok:
 		_account = AccountInfo.new()
 		_account.canonical_uuid = puid  # placeholder until the canonical backend maps it
-		_account.is_anonymous = true
+		_account.is_anonymous = _anonymous
 		CoreEvents.identity_changed.emit(_account)
 	else:
 		_account = null
