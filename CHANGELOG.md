@@ -4,6 +4,20 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## [0.1.1] - 2026-06-30
+
+First game integration (Devil's Bank) shook out a UI bug and some doc gaps.
+
+### Fixed
+- `BedrockSettingsPanel` centers its content properly instead of pinning it to
+  the middle and overflowing. It was relying on `set_anchors_preset(PRESET_CENTER)`,
+  whose default `keep_offsets=true` only moves the top-left to center; now it
+  fills the host area and centers via a `CenterContainer`.
+
+### Docs
+- README rewritten as a usage guide for games consuming the base.
+- Added `CLAUDE.md` and `backend/CLAUDE.md` for future sessions.
+
 ## [0.1.0] - 2026-06-30
 
 First feature-complete pass. Autoloads: `CoreEvents`, `Platform`, `Save`, `Net`,
