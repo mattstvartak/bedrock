@@ -1,0 +1,23 @@
+name: ci
+
+on:
+  pull_request:
+    branches: [development, main]
+  push:
+    branches: [development, main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Godot 4.7
+        run: |
+          curl -fLo godot.zip https://github.com/godotengine/godot-builds/releases/download/4.7-stable/Godot_v4.7-stable_linux.x86_64.zip
+          unzip -q godot.zip
+          sudo install -m 0755 Godot_v4.7-stable_linux.x86_64 /usr/local/bin/godot
+          godot --version
+
+      - name: Boundary + import + tests
+        run: bash scripts/ci.sh
