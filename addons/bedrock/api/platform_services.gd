@@ -17,6 +17,8 @@ const STORE := &"store"
 const VOICE := &"voice"
 
 const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
+const _EOSConnectIdentity := preload("res://addons/bedrock/_internal/identity/eos_connect_identity.gd")
+const _EOS_GATEWAY_PATH := "res://addons/bedrock/_internal/eos/eos_gateway.gd"
 
 var target: Target = Target.STANDALONE
 
@@ -58,6 +60,15 @@ func _load_config() -> GameConfig:
 func _bootstrap() -> void:
 	if config.enable_save:
 		bind(SAVE, _LocalSaveBackend.new())
+
+	# Identity via EOS Connect, only when the GD-EOS addon is present. The gateway
+	# is load()ed (not preloaded) so the base still imports without GD-EOS. It's a
+	# child node so it can tick the EOS platform, and stays idle (no init, no
+	# network) until a login is actually requested.
+	if config.enable_identity and ClassDB.class_exists("EOSConnect"):
+		var gateway: Node = load(_EOS_GATEWAY_PATH).new()
+		add_child(gateway)
+		bind(IDENTITY, _EOSConnectIdentity.new(gateway))
 
 
 func bind(key: StringName, impl: Object) -> void:
