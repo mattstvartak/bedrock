@@ -57,9 +57,13 @@ not vendored. Single-player games that disable multiplayer don't need it.
 
 ## Status
 
-`0.1.0` — scaffold. Public surface and the locator are in place; the modules
-behind the interfaces (identity, save, net, lobbies, voice, ...) are tracked on
-the "Core Build" board.
+`0.1.0` — feature-complete first pass. Save (local-first + cloud), identity,
+networking, lobbies, voice, achievements, social, plus the shared services
+(audio, settings, scenes, input, locale) and a UI kit. See `CHANGELOG.md`.
+
+Account-gated follow-ups (code done, needs your accounts to go live): deploy the
+`backend/` (Neon/R2/Vercel), enable GitHub Actions for CI, and live-test the EOS
+multiplayer/voice flows with real peers.
 
 ## Author
 

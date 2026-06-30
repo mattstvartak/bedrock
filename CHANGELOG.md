@@ -6,14 +6,43 @@ internals under `_internal/` can change in any patch.
 
 ## [0.1.0] - 2026-06-30
 
-### Added
-- Addon scaffold (`addons/bedrock`) with the public-API / `_internal` boundary.
-- `CoreEvents` global signal bus.
-- `Platform` service locator with desktop build-target detection and per-
-  interface backend binding (console targets stubbed).
-- Facade autoloads: `Save`, `Net`, `Identity` (lazy backend resolution; warn
-  cleanly when no backend is bound yet).
-- Interface stubs: `ISaveable`, `ISaveBackend`, `IIdentityProvider`,
-  `IAchievements`, `IStore`, `IVoice`.
-- DTOs: `SaveData`, `LobbyInfo`, `AccountInfo`.
-- `GameConfig` resource for per-game module toggles and settings.
+First feature-complete pass. Autoloads: `CoreEvents`, `Platform`, `Save`, `Net`,
+`Identity`, `Audio`, `Settings`, `Scenes`, `Controls`, `Locale`, `Achievements`,
+`Social`.
+
+### Foundation
+- Addon scaffold with the public-API / `_internal` boundary; `CoreEvents` signal
+  bus; `Platform` service locator (build-target detection + per-interface
+  backend binding); `GameConfig` toggles; interfaces and DTOs.
+
+### Save
+- Local-first disk backend (atomic writes, type-preserving, sha256 checksum);
+  `CloudSaveBackend` that syncs to the canonical cloud when configured, local
+  otherwise.
+
+### Online (EOS, via GD-EOS, optional dependency)
+- Identity: anonymous Device ID login through EOS Connect (verified live).
+- NetworkManager: ENet local + EOS P2P transport behind the `Net` facade.
+- Lobbies: create/leave + invites over EOS Connect (no Epic account).
+- Voice: EOS RTC mic mute + per-player volume on the lobby room.
+- Achievements / stats / leaderboards via EOS.
+- Social: lobby invites + an `ISocial` seam (friends come from platform/backend,
+  not EOS).
+
+### Shared services
+- Audio (buses, music crossfade, pooled SFX), Settings (ConfigFile, drives the
+  audio buses), Scenes (async load + overlay stack), Controls (rebind + per-
+  platform glyphs), Locale (TranslationServer wrapper).
+
+### UI
+- Shared theme, settings panel (wired to Settings/Audio), main + pause menus.
+
+### Tooling
+- Doppler-injected secrets; `scripts/` (check, test, dev, ci, fetch-eos,
+  test-eos-live); GitHub Actions CI (boundary guard + import + tests); example
+  game under `examples/`.
+
+### Backend (`backend/`, not deployed)
+- Canonical-account service (Vercel + Neon + R2): platform-token SSO -> session
+  JWT, save metadata + R2 signed URLs, cross-platform link codes. Typechecks
+  clean; deploy steps in `backend/README`.
