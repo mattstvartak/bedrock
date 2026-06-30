@@ -22,6 +22,7 @@ const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd"
 const _EOSConnectIdentity := preload("res://addons/bedrock/_internal/identity/eos_connect_identity.gd")
 const _EOS_GATEWAY_PATH := "res://addons/bedrock/_internal/eos/eos_gateway.gd"
 const _EOS_ACHIEVEMENTS_PATH := "res://addons/bedrock/_internal/achievements/eos_achievements.gd"
+const _BACKEND_SESSION_PATH := "res://addons/bedrock/_internal/backend/backend_session.gd"
 
 var target: Target = Target.STANDALONE
 
@@ -67,6 +68,9 @@ func _bootstrap() -> void:
 		var save_backend: Node = _CloudSaveBackend.new()
 		add_child(save_backend)
 		bind(SAVE, save_backend)
+		# When a backend is configured, bridge login -> session -> cloud sync.
+		if OS.get_environment("BEDROCK_BACKEND_URL") != "":
+			add_child(load(_BACKEND_SESSION_PATH).new())
 
 	# Networking: ENet local always, EOS online when the addon is present. The
 	# backend is a child node so it can hook the multiplayer peer signals.
