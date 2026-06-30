@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { put } from "@vercel/blob";
-import { sql } from "../lib/db";
-import { accountFromAuthHeader } from "../lib/auth";
+import { sql } from "../lib/db.js";
+import { accountFromAuthHeader } from "../lib/auth.js";
 
 // Save metadata in Neon, blob in Vercel Blob, keyed by account + slot. The client
 // is local-first: it writes disk first, then PUTs the (small, base64) blob here in
@@ -39,7 +39,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const bytes = Buffer.from(blob_base64, "base64");
     const blob = await put(`${accountId}/slot_${slot}.save`, bytes, {
-      access: "public", // URL is unguessable and only returned to the authed owner
+      access: "private", // saves stay auth-gated; the store is a private blob store
       addRandomSuffix: false,
       allowOverwrite: true,
     });

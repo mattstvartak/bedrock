@@ -2,6 +2,7 @@
   "name": "bedrock-backend",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "author": "Matt Stvartak",
   "description": "Bedrock canonical-account + cross-platform save backend (Vercel + Neon + Vercel Blob).",
   "scripts": {
