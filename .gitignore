@@ -1,0 +1,18 @@
+# Godot 4 editor data
+.godot/
+.import/
+
+# Exports / builds
+build/
+export/
+*.tmp
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+*.swp
+
+# Local-only secrets (auth backend keys, EOS product secrets, etc.)
+.env
+.env.*
+!.env.example

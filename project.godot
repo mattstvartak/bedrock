@@ -1,0 +1,23 @@
+; Godot Universal Base — addon dev/test project.
+; Open this standalone to develop and test the base. Games consume addons/core
+; as a git submodule and enable the "Core" plugin in their own project.
+
+config_version=5
+
+[application]
+
+config/name="Godot Universal Base"
+config/description="Reusable modular base addon (save, identity, online multiplayer, shared services). Open standalone to develop; consumed by games as a submodule."
+config/features=PackedStringArray("4.7")
+
+[autoload]
+
+CoreEvents="*res://addons/core/api/event_bus.gd"
+Platform="*res://addons/core/api/platform_services.gd"
+Identity="*res://addons/core/api/identity_api.gd"
+Save="*res://addons/core/api/save_api.gd"
+Net="*res://addons/core/api/net_api.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/core/plugin.cfg")
