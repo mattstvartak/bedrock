@@ -51,6 +51,14 @@ func delete(slot: int = 0) -> void:
 		backend.delete(slot)
 
 
+## Pull the cloud copy into local disk, then call read() to load it. No-op for
+## local-only backends. Conflicts arrive on CoreEvents (sync_* signals).
+func pull(slot: int = 0) -> void:
+	var backend = _resolve()
+	if backend != null and backend.has_method("pull"):
+		await backend.pull(slot)
+
+
 func _capture() -> Dictionary:
 	var out: Dictionary = {}
 	for id in _saveables:

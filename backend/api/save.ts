@@ -21,7 +21,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       from save_objects where account_id=${accountId} and slot=${slot}
     `;
     if (!rows.length) return res.json({ exists: false });
-    return res.json({ exists: true, ...rows[0] });
+    // The blob is private, so fetch its bytes server-side (auth-gated) and hand
+    // them back base64. Saves are small, so proxying through the function is fine.
+    const meta = rows[0];
+    let blob_base64 = "";
+    const fetched = await fetch(meta.blob_url, {
+      headers: { authorization: `Bearer ${process.env.BLOB_READ_WRITE_TOKEN}` },
+    });
+    if (fetched.ok) {
+      blob_base64 = Buffer.from(await fetched.arrayBuffer()).toString("base64");
+    }
+    return res.json({ exists: true, ...meta, blob_base64 });
   }
 
   if (req.method === "PUT") {

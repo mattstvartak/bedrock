@@ -61,6 +61,57 @@ func cloud_enabled() -> bool:
 	return _base_url != "" and _session != ""
 
 
+## Pull the cloud save for a slot into local disk (so the next read() sees it).
+## Resolves divergence by the configured policy; emits sync_conflict when the game
+## must decide. After pull, the game reads the slot as usual.
+func pull(slot: int) -> void:
+	if not cloud_enabled():
+		return
+	CoreEvents.sync_started.emit(slot)
+	var headers := PackedStringArray(["Authorization: Bearer " + _session])
+	if _http.request("%s/api/save?slot=%d" % [_base_url, slot], headers, HTTPClient.METHOD_GET) != OK:
+		CoreEvents.sync_failed.emit(slot, "pull request failed")
+		return
+	var result = await _http.request_completed
+	if int(result[1]) != 200:
+		CoreEvents.sync_failed.emit(slot, "pull got HTTP %d" % result[1])
+		return
+	var data = JSON.parse_string(result[3].get_string_from_utf8())
+	if typeof(data) != TYPE_DICTIONARY or not data.get("exists", false):
+		CoreEvents.sync_completed.emit(slot)  # nothing in the cloud yet
+		return
+
+	var cloud_unix := int(data.get("updated_unix", 0))
+	var cloud_blob := _decode(data.get("blob_base64", ""))
+	var local = _local.meta(slot)
+
+	if not local.get("exists", false) or cloud_unix > int(local.get("updated_unix", 0)):
+		_local.write(slot, cloud_blob)  # cloud wins (or no local yet)
+		CoreEvents.sync_completed.emit(slot)
+	elif cloud_unix == int(local.get("updated_unix", 0)):
+		CoreEvents.sync_completed.emit(slot)  # already in sync
+	else:
+		# Local is newer than the cloud copy. Last-write-wins keeps local; any
+		# other policy hands both to the game to resolve.
+		if _conflict_policy() == "last_write_wins":
+			CoreEvents.sync_completed.emit(slot)
+		else:
+			CoreEvents.sync_conflict.emit(slot, _local.read(slot), cloud_blob)
+
+
+func _decode(b64: String) -> Dictionary:
+	if b64 == "":
+		return {}
+	var parsed = str_to_var(Marshalls.base64_to_raw(b64).get_string_from_utf8())
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+
+
+func _conflict_policy() -> String:
+	if Platform.config != null:
+		return Platform.config.conflict_policy
+	return "last_write_wins"
+
+
 func _sync_up(slot: int, data: Dictionary) -> void:
 	# One request: metadata + the (small, base64) blob go to the backend, which
 	# stores the blob in Vercel Blob and the metadata in Neon.

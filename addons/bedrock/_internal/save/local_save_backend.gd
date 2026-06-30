@@ -52,6 +52,25 @@ func read(slot: int) -> Dictionary:
 	return blob
 
 
+## Envelope metadata for a slot (no blob), used for cloud conflict comparison.
+func meta(slot: int) -> Dictionary:
+	var p := _path(slot)
+	if not FileAccess.file_exists(p):
+		return {"exists": false}
+	var f := FileAccess.open(p, FileAccess.READ)
+	if f == null:
+		return {"exists": false}
+	var envelope = str_to_var(f.get_as_text())
+	f.close()
+	if typeof(envelope) != TYPE_DICTIONARY:
+		return {"exists": false}
+	return {
+		"exists": true,
+		"updated_unix": int(envelope.get("updated_unix", 0)),
+		"checksum": envelope.get("checksum", ""),
+	}
+
+
 func list_slots() -> Array:
 	var out: Array = []
 	if not DirAccess.dir_exists_absolute(DIR):
