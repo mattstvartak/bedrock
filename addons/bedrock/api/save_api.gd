@@ -36,6 +36,29 @@ func read(slot: int = 0) -> void:
 	CoreEvents.save_loaded.emit(slot)
 
 
+func has_slot(slot: int = 0) -> bool:
+	return slot in list_slots()
+
+
+func list_slots() -> Array:
+	var backend = _resolve()
+	return backend.list_slots() if backend else []
+
+
+func delete(slot: int = 0) -> void:
+	var backend = _resolve()
+	if backend:
+		backend.delete(slot)
+
+
+## Pull the cloud copy into local disk, then call read() to load it. No-op for
+## local-only backends. Conflicts arrive on CoreEvents (sync_* signals).
+func pull(slot: int = 0) -> void:
+	var backend = _resolve()
+	if backend != null and backend.has_method("pull"):
+		await backend.pull(slot)
+
+
 func _capture() -> Dictionary:
 	var out: Dictionary = {}
 	for id in _saveables:

@@ -37,11 +37,33 @@ Game code must **never** reference `addons/bedrock/_internal/`. That folder is
 implementation and changes freely between releases. This separation is what
 lets Bedrock be maintained independently and versioned with semver.
 
+## Development
+
+Secrets live in Doppler (project `bedrock`), never in a committed file. The
+repo is bound to the `bedrock/dev` config via `doppler.yaml`, so commands pull
+config at runtime:
+
+```
+scripts/check.sh   # headless import, catches parse errors (CI gate)
+scripts/test.sh    # headless test suite, secrets injected via doppler run
+scripts/dev.sh     # open the editor with secrets injected
+```
+
+First time on a new machine: `doppler login` then `doppler setup`.
+
+For the online features (identity, net, lobbies, voice, achievements), fetch the
+GD-EOS extension once: `scripts/fetch-eos.sh`. It's a ~76MB binary, gitignored,
+not vendored. Single-player games that disable multiplayer don't need it.
+
 ## Status
 
-`0.1.0` — scaffold. Public surface and the locator are in place; the modules
-behind the interfaces (identity, save, net, lobbies, voice, ...) are tracked on
-the "Core Build" board.
+`0.1.0` — feature-complete first pass. Save (local-first + cloud), identity,
+networking, lobbies, voice, achievements, social, plus the shared services
+(audio, settings, scenes, input, locale) and a UI kit. See `CHANGELOG.md`.
+
+Account-gated follow-ups (code done, needs your accounts to go live): deploy the
+`backend/` (Neon/R2/Vercel), enable GitHub Actions for CI, and live-test the EOS
+multiplayer/voice flows with real peers.
 
 ## Author
 

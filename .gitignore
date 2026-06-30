@@ -12,6 +12,9 @@ export/
 Thumbs.db
 *.swp
 
+# GD-EOS binary dependency (~76MB), fetched via scripts/fetch-eos.sh
+addons/gd-eos/
+
 # Local-only secrets (auth backend keys, EOS product secrets, etc.)
 .env
 .env.*

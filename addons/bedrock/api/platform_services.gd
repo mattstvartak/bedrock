@@ -15,14 +15,28 @@ const NET := &"net"
 const ACHIEVEMENTS := &"achievements"
 const STORE := &"store"
 const VOICE := &"voice"
+const SOCIAL := &"social"
+
+const _CloudSaveBackend := preload("res://addons/bedrock/_internal/save/cloud_save_backend.gd")
+const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd")
+const _EOSConnectIdentity := preload("res://addons/bedrock/_internal/identity/eos_connect_identity.gd")
+const _EOS_GATEWAY_PATH := "res://addons/bedrock/_internal/eos/eos_gateway.gd"
+const _EOS_ACHIEVEMENTS_PATH := "res://addons/bedrock/_internal/achievements/eos_achievements.gd"
+const _BACKEND_SESSION_PATH := "res://addons/bedrock/_internal/backend/backend_session.gd"
 
 var target: Target = Target.STANDALONE
+
+## A game sets this directly, or ships one at res://game_config.tres. Defaults
+## are used if neither is present.
+var config: GameConfig
 
 var _backends: Dictionary = {}  ## StringName -> Object (interface impl)
 
 
 func _ready() -> void:
 	target = detect_target()
+	if config == null:
+		config = _load_config()
 	_bootstrap()
 
 
@@ -36,11 +50,47 @@ func detect_target() -> Target:
 	return Target.STANDALONE
 
 
-## Instantiate and bind the backends for this target. Empty until the modules
-## (identity, save, net, ...) land; each will bind its impl here behind its
-## interface. Facades resolve lazily, so binding can also happen after _ready.
+func _load_config() -> GameConfig:
+	var path := "res://game_config.tres"
+	if ResourceLoader.exists(path):
+		return load(path) as GameConfig
+	return GameConfig.new()
+
+
+## Instantiate and bind the platform-divergent backends (save, identity, net,
+## ...) for this target + config. The self-contained services (audio, settings,
+## scenes, input, locale) are their own autoloads and don't bind here. Facades
+## resolve lazily, so a backend can also be bound after _ready.
 func _bootstrap() -> void:
-	pass
+	if config.enable_save:
+		# Local-first; syncs to the canonical cloud when a backend URL + session
+		# are configured, otherwise pure local. A child node (it hosts HTTP).
+		var save_backend: Node = _CloudSaveBackend.new()
+		add_child(save_backend)
+		bind(SAVE, save_backend)
+		# When a backend is configured, bridge login -> session -> cloud sync.
+		if OS.get_environment("BEDROCK_BACKEND_URL") != "":
+			add_child(load(_BACKEND_SESSION_PATH).new())
+
+	# Networking: ENet local always, EOS online when the addon is present. The
+	# backend is a child node so it can hook the multiplayer peer signals.
+	if config.enable_multiplayer:
+		var net: Node = _NetBackend.new()
+		add_child(net)
+		bind(NET, net)
+
+	# Identity via EOS Connect, only when the GD-EOS addon is present. The gateway
+	# is load()ed (not preloaded) so the base still imports without GD-EOS. It's a
+	# child node so it can tick the EOS platform, and stays idle (no init, no
+	# network) until a login is actually requested.
+	if config.enable_identity and ClassDB.class_exists("EOSConnect"):
+		var gateway: Node = load(_EOS_GATEWAY_PATH).new()
+		add_child(gateway)
+		bind(IDENTITY, _EOSConnectIdentity.new(gateway))
+
+	# Achievements / stats / leaderboards via EOS, when enabled and present.
+	if config.enable_achievements and ClassDB.class_exists("EOSAchievements"):
+		bind(ACHIEVEMENTS, load(_EOS_ACHIEVEMENTS_PATH).new())
 
 
 func bind(key: StringName, impl: Object) -> void:
