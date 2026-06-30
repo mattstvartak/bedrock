@@ -1,16 +1,16 @@
 @tool
 extends EditorPlugin
-## Registers the base's public autoloads when a game enables this plugin.
+## Registers Bedrock's public autoloads when a game enables this plugin.
 ## Order matters: CoreEvents and Platform come up before the facades that lean
 ## on them. Dictionary insertion order is preserved, so this order is the boot
 ## order in the consuming project.
 
 const AUTOLOADS := {
-	"CoreEvents": "res://addons/core/api/event_bus.gd",
-	"Platform": "res://addons/core/api/platform_services.gd",
-	"Identity": "res://addons/core/api/identity_api.gd",
-	"Save": "res://addons/core/api/save_api.gd",
-	"Net": "res://addons/core/api/net_api.gd",
+	"CoreEvents": "res://addons/bedrock/api/event_bus.gd",
+	"Platform": "res://addons/bedrock/api/platform_services.gd",
+	"Identity": "res://addons/bedrock/api/identity_api.gd",
+	"Save": "res://addons/bedrock/api/save_api.gd",
+	"Net": "res://addons/bedrock/api/net_api.gd",
 }
 
 

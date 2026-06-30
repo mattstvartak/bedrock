@@ -5,7 +5,7 @@ storage backends, the auth client, platform glue. It can change in any patch
 release.
 
 **Game code must never `preload()` or reference anything in here.** Use the
-public API in `addons/core/api/` only: the autoload facades (`Save`, `Net`,
+public API in `addons/bedrock/api/` only: the autoload facades (`Save`, `Net`,
 `Identity`), the `class_name`'d interfaces, the DTOs, and the `CoreEvents`
 signal bus. A CI grep guard will enforce this.
 
