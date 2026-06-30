@@ -27,6 +27,14 @@ func login() -> void:
 	p.login()
 
 
+## Steam login with a Steam session ticket (from GodotSteam). No-op if the
+## provider doesn't support it.
+func login_steam(ticket: String) -> void:
+	var p = _resolve()
+	if p != null and p.has_method("login_steam"):
+		p.login_steam(ticket)
+
+
 func logout() -> void:
 	var p = _resolve()
 	if p:

@@ -66,10 +66,23 @@ func login_device_id(display_name: String) -> void:
 	EOSConnect.create_device_id(OS.get_name(), Callable())
 
 
+## Steam login: the game gets a Steam session ticket (via GodotSteam) and passes
+## it here; EOS Connect maps it to the same canonical PUID space. No Epic account.
+func login_steam(ticket: String, display_name := "Player") -> void:
+	if not init_from_env():
+		login_completed.emit(false, "")
+		return
+	_login_external(EOS.ExternalCredentialType.ECT_STEAM_SESSION_TICKET, ticket, display_name)
+
+
 func _do_login(display_name: String) -> void:
+	_login_external(EOS.ExternalCredentialType.ECT_DEVICEID_ACCESS_TOKEN, "", display_name)
+
+
+func _login_external(cred_type: int, token: String, display_name: String) -> void:
 	var creds := EOSConnect_Credentials.new()
-	creds.type = EOS.ExternalCredentialType.ECT_DEVICEID_ACCESS_TOKEN
-	creds.token = ""
+	creds.type = cred_type
+	creds.token = token
 	var info := EOSConnect_UserLoginInfo.new()
 	info.display_name = display_name
 	EOSConnect.login(creds, info, Callable())
