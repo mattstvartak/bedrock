@@ -1,0 +1,3 @@
+setup:
+  project: bedrock
+  config: dev

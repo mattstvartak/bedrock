@@ -37,6 +37,20 @@ Game code must **never** reference `addons/bedrock/_internal/`. That folder is
 implementation and changes freely between releases. This separation is what
 lets Bedrock be maintained independently and versioned with semver.
 
+## Development
+
+Secrets live in Doppler (project `bedrock`), never in a committed file. The
+repo is bound to the `bedrock/dev` config via `doppler.yaml`, so commands pull
+config at runtime:
+
+```
+scripts/check.sh   # headless import, catches parse errors (CI gate)
+scripts/test.sh    # headless test suite, secrets injected via doppler run
+scripts/dev.sh     # open the editor with secrets injected
+```
+
+First time on a new machine: `doppler login` then `doppler setup`.
+
 ## Status
 
 `0.1.0` — scaffold. Public surface and the locator are in place; the modules
