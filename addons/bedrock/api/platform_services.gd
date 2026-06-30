@@ -20,6 +20,7 @@ const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_sa
 const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd")
 const _EOSConnectIdentity := preload("res://addons/bedrock/_internal/identity/eos_connect_identity.gd")
 const _EOS_GATEWAY_PATH := "res://addons/bedrock/_internal/eos/eos_gateway.gd"
+const _EOS_ACHIEVEMENTS_PATH := "res://addons/bedrock/_internal/achievements/eos_achievements.gd"
 
 var target: Target = Target.STANDALONE
 
@@ -77,6 +78,10 @@ func _bootstrap() -> void:
 		var gateway: Node = load(_EOS_GATEWAY_PATH).new()
 		add_child(gateway)
 		bind(IDENTITY, _EOSConnectIdentity.new(gateway))
+
+	# Achievements / stats / leaderboards via EOS, when enabled and present.
+	if config.enable_achievements and ClassDB.class_exists("EOSAchievements"):
+		bind(ACHIEVEMENTS, load(_EOS_ACHIEVEMENTS_PATH).new())
 
 
 func bind(key: StringName, impl: Object) -> void:

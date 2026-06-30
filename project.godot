@@ -22,6 +22,7 @@ Locale="*res://addons/bedrock/api/locale_api.gd"
 Identity="*res://addons/bedrock/api/identity_api.gd"
 Save="*res://addons/bedrock/api/save_api.gd"
 Net="*res://addons/bedrock/api/net_api.gd"
+Achievements="*res://addons/bedrock/api/achievements_api.gd"
 
 [editor_plugins]
 
