@@ -36,6 +36,24 @@ func leave() -> void:
 		b.leave()
 
 
+# --- Lobbies (EOS, needs an Identity login first) ---
+
+func create_lobby(max_members: int = 8, enable_voice: bool = true) -> bool:
+	var b = _resolve()
+	return b.create_lobby(max_members, enable_voice) if b else _no_backend()
+
+
+func leave_lobby() -> void:
+	var b = _resolve()
+	if b:
+		b.leave_lobby()
+
+
+func current_lobby_id() -> String:
+	var b = _resolve()
+	return b.current_lobby_id() if b else ""
+
+
 func is_host() -> bool:
 	var b = _resolve()
 	return b.is_host() if b else false
