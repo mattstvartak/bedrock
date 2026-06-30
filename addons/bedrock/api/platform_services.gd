@@ -15,6 +15,7 @@ const NET := &"net"
 const ACHIEVEMENTS := &"achievements"
 const STORE := &"store"
 const VOICE := &"voice"
+const SOCIAL := &"social"
 
 const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
 const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd")

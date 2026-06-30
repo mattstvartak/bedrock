@@ -54,6 +54,11 @@ func current_lobby_id() -> String:
 	return b.current_lobby_id() if b else ""
 
 
+func invite_to_lobby(target_user_id) -> bool:
+	var b = _resolve()
+	return b.invite_to_lobby(target_user_id) if b else false
+
+
 # --- Voice (EOS RTC, on the current lobby's room) ---
 
 func set_muted(muted: bool) -> bool:

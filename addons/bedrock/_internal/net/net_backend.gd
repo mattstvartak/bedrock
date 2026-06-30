@@ -97,6 +97,10 @@ func current_lobby_id() -> String:
 	return _eos_lobby.current_lobby_id() if _eos_lobby != null else ""
 
 
+func invite_to_lobby(target_user_id) -> bool:
+	return _eos_lobby.invite(target_user_id) if _eos_lobby != null else false
+
+
 # --- Voice (EOS RTC, on the current lobby's room) ---
 
 func set_muted(muted: bool) -> bool:

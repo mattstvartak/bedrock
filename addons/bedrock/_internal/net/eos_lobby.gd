@@ -46,6 +46,16 @@ func current_lobby_id() -> String:
 	return _lobby_id
 
 
+## Invite another player (by EOS ProductUserId) into the current lobby. Works
+## over EOS Connect, no Epic account needed.
+func invite(target_user_id) -> bool:
+	var uid = _local_user()
+	if uid == null or _lobby_id == "":
+		return false
+	EOSLobby.send_invite(_lobby_id, uid, target_user_id, Callable())
+	return true
+
+
 func _local_user():
 	if EOSConnect.get_logged_in_users_count() > 0:
 		return EOSConnect.get_logged_in_user_by_index(0)
