@@ -54,6 +54,17 @@ Autoloads (boot order matters; set in `project.godot` + registered by
   `scripts/fetch-eos.sh`. The base `load()`s EOS code only when the EOS classes
   are registered, so it imports and runs fine WITHOUT the addon (online features
   just stay off). Get it with `scripts/fetch-eos.sh`, then open the editor once.
+- The EOS-backed internals (`_internal/eos/`, `_internal/net/eos/`,
+  `_internal/voice/`, `_internal/achievements/`) reference GD-EOS classes by name,
+  which the headless import doesn't deeply parse but the interactive editor's LSP
+  does — so without the SDK they'd show "not declared" errors in the editor's
+  Errors dock. Each of those folders ships a `.gdignore` so the editor skips them
+  entirely; they're only ever `load()`ed at runtime (gated on `ClassDB`), so
+  ignoring them changes nothing at runtime. `fetch-eos.sh` deletes the markers
+  when you install GD-EOS. Keep any new EOS-class-referencing script inside one of
+  those ignored folders (not a mixed folder like `_internal/net/`, whose
+  `net_backend.gd` must stay parseable), or it will break the editor for offline
+  consumers.
 - API shape (learned by introspection): `EOS` is a STATIC class
   (`EOS.initialize`, enums like `EOS.ExternalCredentialType.ECT_DEVICEID_ACCESS_TOKEN=10`,
   `ECT_STEAM_SESSION_TICKET=18`). `EOSPlatform`, `EOSConnect`, `EOSLobby`,
