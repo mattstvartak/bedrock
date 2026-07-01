@@ -15,6 +15,13 @@ Thumbs.db
 # GD-EOS binary dependency (~76MB), fetched via scripts/fetch-eos.sh
 addons/gd-eos/
 
+# The EOS-backed internals are .gdignore'd until GD-EOS is installed, so their
+# generated .uid files aren't tracked (they regenerate once the SDK is present).
+addons/bedrock/_internal/eos/*.uid
+addons/bedrock/_internal/net/eos/*.uid
+addons/bedrock/_internal/voice/*.uid
+addons/bedrock/_internal/achievements/*.uid
+
 # Local-only secrets (auth backend keys, EOS product secrets, etc.)
 .env
 .env.*

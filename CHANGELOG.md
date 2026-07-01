@@ -18,6 +18,15 @@ internals under `_internal/` can change in any patch.
   the folder could be ignored without hiding `net_backend.gd` (ENet local play).
   Found integrating Bedrock into Devil's Bank.
 
+## [0.1.3] - 2026-06-30
+
+### Fixed
+- Stop shipping `.uid` files for the `.gdignore`'d EOS internals. Godot treats
+  them as orphaned once the folder is ignored and deletes them on first editor
+  open, which dirtied a consumer's submodule working tree on every open. Removed
+  the five `.uid` files and gitignored those paths (they regenerate when
+  `fetch-eos.sh` enables the folders). Follow-up to 0.1.2.
+
 ## [0.1.1] - 2026-06-30
 
 First game integration (Devil's Bank) shook out a UI bug and some doc gaps.
