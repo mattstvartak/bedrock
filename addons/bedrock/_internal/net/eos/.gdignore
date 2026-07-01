@@ -1,0 +1,5 @@
+# EOS-backed internals. The editor ignores this folder so the base opens clean
+# WITHOUT GD-EOS installed (its classes would otherwise be "not declared"). The
+# code is loaded lazily at runtime only when GD-EOS is present, so ignoring it
+# here changes nothing at runtime. scripts/fetch-eos.sh deletes these markers
+# when you install GD-EOS, so the code parses and exports normally with online on.
