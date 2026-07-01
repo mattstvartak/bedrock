@@ -7,8 +7,8 @@ extends Node
 ## connect/disconnect is forwarded to CoreEvents; netcode prediction and the
 ## authority model are the game's choice on top of this.
 
-const _EOS_NET_PATH := "res://addons/bedrock/_internal/net/eos_net.gd"
-const _EOS_LOBBY_PATH := "res://addons/bedrock/_internal/net/eos_lobby.gd"
+const _EOS_NET_PATH := "res://addons/bedrock/_internal/net/eos/eos_net.gd"
+const _EOS_LOBBY_PATH := "res://addons/bedrock/_internal/net/eos/eos_lobby.gd"
 const _EOS_VOICE_PATH := "res://addons/bedrock/_internal/voice/eos_voice.gd"
 const _DEFAULT_PORT := 7777
 

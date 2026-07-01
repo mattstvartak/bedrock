@@ -4,6 +4,20 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## [0.1.2] - 2026-06-30
+
+### Fixed
+- **The editor now opens clean without GD-EOS.** The EOS-backed internals
+  reference GD-EOS classes by name; the interactive editor's LSP flags them as
+  "not declared" when the SDK is absent (the headless import doesn't, which is
+  why CI stayed green and the game still ran). The EOS-only folders (`_internal/eos/`,
+  `_internal/net/eos/`, `_internal/voice/`, `_internal/achievements/`) now ship a
+  `.gdignore` so the editor skips them; they're only `load()`ed at runtime, so
+  nothing changes there. `scripts/fetch-eos.sh` deletes the markers when you
+  install GD-EOS. Moved `eos_net.gd`/`eos_lobby.gd` into `_internal/net/eos/` so
+  the folder could be ignored without hiding `net_backend.gd` (ENet local play).
+  Found integrating Bedrock into Devil's Bank.
+
 ## [0.1.1] - 2026-06-30
 
 First game integration (Devil's Bank) shook out a UI bug and some doc gaps.

@@ -38,6 +38,11 @@ checkout's `scripts/fetch-eos.sh` downloads it; copy the resulting
 `addons/gd-eos` into your project, then open the editor once so Godot registers
 the extension.
 
+Single-player games can skip GD-EOS entirely: the EOS-backed internals ship
+`.gdignore`'d, so the editor opens clean without the SDK and the online code is
+only loaded at runtime when it's actually present. `fetch-eos.sh` removes those
+markers when you install GD-EOS.
+
 ## The one rule
 
 Use the **public API only** (everything under `addons/bedrock/api/`): the
