@@ -13,9 +13,15 @@ var _sliders: Dictionary = {}
 
 
 func _ready() -> void:
+	# Fill the host area and center the content in it. A CenterContainer does the
+	# centering reliably; set_anchors_preset(PRESET_CENTER) alone keeps the default
+	# offsets and just pins the content's top-left to the middle, which overflows.
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+	var center := CenterContainer.new()
+	center.set_anchors_preset(Control.PRESET_FULL_RECT)
+	add_child(center)
 	var vbox := VBoxContainer.new()
-	vbox.set_anchors_preset(Control.PRESET_CENTER)
-	add_child(vbox)
+	center.add_child(vbox)
 
 	for bus in _BUSES:
 		var row := HBoxContainer.new()
