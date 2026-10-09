@@ -2,10 +2,13 @@ extends ISaveBackend
 ## Local-first disk backend for ISaveBackend.
 ##
 ## Writes each slot atomically (temp file, then rename) under user://saves. Uses
-## Godot's var_to_str/str_to_var so saved values keep their real types (ints stay
-## ints, Vector2 stays Vector2), unlike a JSON round-trip. The cloud sync layer
+## Godot's binary variant encoding (via SaveCodec) so saved values keep their real
+## types (ints stay ints, Vector2 stays Vector2), unlike a JSON round-trip, and
+## loading a save can never construct an Object. The cloud sync layer
 ## (R2) will wrap this same interface; the local copy is always the source of
 ## truth the game reads from.
+
+const SaveCodec := preload("res://addons/bedrock/_internal/save/save_codec.gd")
 
 const DIR := "user://saves"
 const EXT := ".save"
@@ -25,7 +28,7 @@ func write(slot: int, data: Dictionary) -> void:
 	if f == null:
 		push_error("[LocalSave] cannot open %s for write" % tmp)
 		return
-	f.store_string(var_to_str(envelope))
+	f.store_buffer(SaveCodec.encode(envelope))
 	f.close()
 	# Rename is the atomic step: a crash mid-write can't corrupt the live slot.
 	var err := DirAccess.rename_absolute(tmp, _path(slot))
@@ -41,7 +44,7 @@ func read(slot: int) -> Dictionary:
 	if f == null:
 		push_error("[LocalSave] cannot open slot %d for read" % slot)
 		return {}
-	var envelope = str_to_var(f.get_as_text())
+	var envelope = SaveCodec.decode(f.get_buffer(f.get_length()))
 	f.close()
 	if typeof(envelope) != TYPE_DICTIONARY or not envelope.has("blob"):
 		push_error("[LocalSave] slot %d is corrupt or unreadable" % slot)
@@ -60,7 +63,7 @@ func meta(slot: int) -> Dictionary:
 	var f := FileAccess.open(p, FileAccess.READ)
 	if f == null:
 		return {"exists": false}
-	var envelope = str_to_var(f.get_as_text())
+	var envelope = SaveCodec.decode(f.get_buffer(f.get_length()))
 	f.close()
 	if typeof(envelope) != TYPE_DICTIONARY:
 		return {"exists": false}
