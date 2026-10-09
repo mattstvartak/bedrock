@@ -18,6 +18,9 @@ const TMP := ".tmp"
 # Test hook: truncate the temp write to simulate a short write.
 var _test_short_write := false
 
+## "tmp" or "bak" when the last read had to fall back to that file, else "".
+var last_source := ""
+
 
 ## write() never throws; write_checked() returns true only when the new data is on disk and decodes back. On false the
 ## previous save is untouched. The last good slot is kept as <slot>.bak.
@@ -69,11 +72,13 @@ func read(slot: int) -> Dictionary:
 	return {} if got == null else got
 
 
-## Slot data, {} when no slot, .bak or .tmp file exists, and null when files exist but
-## none decodes. Tries the slot, then .bak, then a leftover .tmp.
+## Slot data, {} when no slot, .tmp or .bak file exists, and null when files exist but
+## none decodes with a matching checksum. Tries the slot, then a leftover .tmp (verified
+## and newer than .bak), then .bak. Sets last_source to "tmp" or "bak" on a fallback.
 func read_checked(slot: int) -> Variant:
 	var found := false
-	for p in [_path(slot), _path(slot) + BAK, _path(slot) + TMP]:
+	last_source = ""
+	for p in [_path(slot), _path(slot) + TMP, _path(slot) + BAK]:
 		if not FileAccess.file_exists(p):
 			continue
 		found = true
@@ -83,7 +88,12 @@ func read_checked(slot: int) -> Variant:
 			continue
 		var blob: Dictionary = envelope["blob"]
 		if envelope.get("checksum", "") != var_to_str(blob).sha256_text():
-			push_warning("[LocalSave] checksum mismatch in %s (file edited or corrupted)" % p)
+			push_error("[LocalSave] checksum mismatch in %s (file edited or corrupted)" % p)
+			continue
+		if p.ends_with(TMP):
+			last_source = "tmp"
+		elif p.ends_with(BAK):
+			last_source = "bak"
 		return blob
 	return null if found else {}
 

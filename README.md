@@ -105,6 +105,11 @@ restored and emits `CoreEvents.save_loaded`; an empty slot returns false quietly
 write or a corrupt slot emits `CoreEvents.save_failed(slot, reason)`, and a corrupt read
 restores nothing, so check the result before carrying on with empty state.
 
+If the slot file itself was unreadable or failed its checksum, `read` falls back to a
+leftover `.tmp` and then the `.bak` copy. It still restores and returns true, and also
+emits `CoreEvents.save_recovered(slot, source)` with `source` set to `"tmp"` or `"bak"`,
+so a game can tell the player their latest progress may be missing.
+
 Writes are **local-first**: disk first, cloud async. Cloud sync turns on
 automatically once the player is signed in and a backend is configured (see
 Online below). Conflicts arrive on `CoreEvents.sync_conflict(slot, local, cloud)`.

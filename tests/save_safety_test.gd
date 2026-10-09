@@ -8,6 +8,7 @@ const SLOT := 9
 const PLANT := "user://planted_script.gd"
 const LocalSave := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
 const SaveCodec := preload("res://addons/bedrock/_internal/save/save_codec.gd")
+const CloudSave := preload("res://addons/bedrock/_internal/save/cloud_save_backend.gd")
 
 var _fails: Array[String] = []
 var _local := LocalSave.new()
@@ -45,6 +46,8 @@ func _ready() -> void:
 	for payload in [
 		'{"slot": 9, "blob": Object(RefCounted,"script":Resource("%s"))}' % PLANT,
 		'{"slot": 9, "blob": Resource("%s")}' % PLANT,
+		'{"blob":{"x":Object;\n(RefCounted,"script":Resource;\n("%s"))}}' % PLANT,
+		'{"blob":{"x":Object\u0001(RefCounted,"script":Resource\u0001("%s"))}}'% PLANT,
 	]:
 		_put_text(payload)
 		var got: Dictionary = _local.read(SLOT)
@@ -68,6 +71,8 @@ func _ready() -> void:
 	_check(_local.read(SLOT) == old_blob, "legacy text save of plain data loads")
 
 	_test_recovery()
+	_test_fallback_order()
+	_test_cloud_decode()
 	_test_facade()
 
 	_local.delete(SLOT)
@@ -119,6 +124,76 @@ func _test_recovery() -> void:
 
 	_local.delete(SLOT)
 	_check(not FileAccess.file_exists(p) and not FileAccess.file_exists(p + ".bak") and not FileAccess.file_exists(p + ".tmp"), "delete removes slot, .bak and .tmp")
+
+
+func _raw_save(path: String, data: Dictionary) -> void:
+	var f := FileAccess.open(path, FileAccess.WRITE)
+	f.store_buffer(SaveCodec.encode({
+		"slot": SLOT, "updated_unix": 1, "checksum": var_to_str(data).sha256_text(), "blob": data,
+	}))
+	f.close()
+
+
+func _test_fallback_order() -> void:
+	var p := _slot_path()
+	_local.delete(SLOT)
+	DirAccess.make_dir_recursive_absolute("user://saves")
+	_raw_save(p + ".tmp", {"level": 2})
+	_raw_save(p + ".bak", {"level": 1})
+	_check(_local.read(SLOT) == {"level": 2}, "missing slot with valid .tmp and older .bak restores .tmp")
+	_check(_local.last_source == "tmp", "tmp fallback reports its source")
+
+	_local.delete(SLOT)
+	_raw_save(p + ".bak", {"level": 1})
+	_check(_local.read(SLOT) == {"level": 1} and _local.last_source == "bak", "bak fallback reports its source")
+
+	# Checksum mismatch counts as corrupt for that file, so the next copy is tried.
+	_local.delete(SLOT)
+	var bad := FileAccess.open(p, FileAccess.WRITE)
+	bad.store_buffer(SaveCodec.encode({"slot": SLOT, "checksum": "nope", "blob": {"level": 99}}))
+	bad.close()
+	_raw_save(p + ".bak", {"level": 1})
+	_check(_local.read(SLOT) == {"level": 1}, "checksum mismatch falls through to the next copy")
+	var only_bad := FileAccess.open(p + ".bak", FileAccess.WRITE)
+	only_bad.store_buffer(SaveCodec.encode({"slot": SLOT, "checksum": "nope", "blob": {"level": 99}}))
+	only_bad.close()
+	_check(_local.read_checked(SLOT) == null, "all copies failing checksum reads as null")
+
+	_local.delete(SLOT)
+	_local.write(SLOT, {"level": 4})
+	_check(_local.read(SLOT) == {"level": 4} and _local.last_source == "", "primary read reports no fallback")
+
+	# Facade: a fallback read still restores and returns true, plus save_recovered.
+	var probe := Probe.new()
+	probe.state = _state
+	var old_backend = Save._backend
+	Save._backend = _local
+	Save.register(probe)
+	var got: Array = []
+	var on_rec := func(s, src): got.append([s, src])
+	CoreEvents.save_recovered.connect(on_rec)
+	_local.delete(SLOT)
+	_raw_save(p + ".bak", {"probe": {"level": 8}})
+	var ok: bool = Save.read(SLOT)
+	_check(ok and _state["level"] == 8 and got == [[SLOT, "bak"]], "facade fallback read restores and emits save_recovered")
+	got.clear()
+	_local.write(SLOT, {"level": 9})
+	_check(Save.read(SLOT) and got.is_empty(), "facade primary read emits no save_recovered")
+	CoreEvents.save_recovered.disconnect(on_rec)
+	Save.unregister("probe")
+	Save._backend = old_backend
+	_local.delete(SLOT)
+
+
+func _test_cloud_decode() -> void:
+	var cloud := CloudSave.new()
+	_check(cloud._decode("") == null, "cloud decode of empty blob is a failure")
+	_check(cloud._decode(Marshalls.raw_to_base64("junk".to_utf8_buffer())) == null, "cloud decode of junk is a failure")
+	var good := {"level": 5}
+	_check(cloud._decode(Marshalls.raw_to_base64(SaveCodec.encode(good))) == good, "cloud decode of a good blob")
+	var evil := '{"x":Object;\n(RefCounted,"script":Resource;\n("%s"))}' % PLANT
+	_check(cloud._decode(Marshalls.raw_to_base64(evil.to_utf8_buffer())) == null, "cloud decode refuses planted blob")
+	cloud.free()
 
 
 class Probe extends ISaveable:

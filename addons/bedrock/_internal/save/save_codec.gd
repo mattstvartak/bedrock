@@ -2,13 +2,14 @@ extends RefCounted
 ## Encode and decode save payloads without ever building an Object.
 ##
 ## New saves are var_to_bytes. Older saves are var_to_str text; those are only
-## parsed after rejecting any token that can construct an Object or load a
-## Resource, since str_to_var would otherwise run an attacker's script on load.
+## parsed after rejecting any mention of a token that can construct an Object or
+## load a Resource (a whole-word match, since Godot lets whitespace, control chars
+## and comments sit before the bracket), since str_to_var would otherwise run an attacker's script on load.
 ## A rejected or unparseable payload decodes to null and counts as corrupt.
 
 # '{' opens every legacy text envelope. A binary dictionary starts with type id 27.
 const _TEXT_START := 0x7b
-const _OBJECT_TOKEN := "\\b(Object|Resource|ExtResource|SubResource)\\s*\\("
+const _OBJECT_TOKEN := "\\b(Object|Resource|ExtResource|SubResource)\\b"
 
 
 static func encode(value: Variant) -> PackedByteArray:

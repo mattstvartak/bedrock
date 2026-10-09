@@ -47,6 +47,9 @@ func read(slot: int = 0) -> bool:
 		return false
 	_restore(data)
 	CoreEvents.save_loaded.emit(slot)
+	var source = backend.get("last_source")
+	if source != null and source != "":
+		CoreEvents.save_recovered.emit(slot, source)
 	return true
 
 

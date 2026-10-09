@@ -13,6 +13,7 @@ signal identity_login_failed(reason)    ## String
 signal save_written(slot)               ## int
 signal save_loaded(slot)                ## int
 signal save_failed(slot, reason)        ## int, String
+signal save_recovered(slot, source)     ## int, String ("tmp" or "bak"): restored from a fallback file
 signal sync_started(slot)               ## int
 signal sync_completed(slot)             ## int
 signal sync_failed(slot, reason)        ## int, String

@@ -95,11 +95,17 @@ func pull(slot: int) -> void:
 
 	var cloud_unix := int(data.get("updated_unix", 0))
 	var cloud_blob := _decode(data.get("blob_base64", ""))
+	if cloud_blob == null:
+		CoreEvents.sync_failed.emit(slot, "cloud copy is unreadable")
+		return
 	var local = _local.meta(slot)
 
 	if not local.get("exists", false) or cloud_unix > int(local.get("updated_unix", 0)):
-		_local.write(slot, cloud_blob)  # cloud wins (or no local yet)
-		CoreEvents.sync_completed.emit(slot)
+		# cloud wins (or no local yet)
+		if _local.write_checked(slot, cloud_blob):
+			CoreEvents.sync_completed.emit(slot)
+		else:
+			CoreEvents.sync_failed.emit(slot, "could not write the cloud copy to disk")
 	elif cloud_unix == int(local.get("updated_unix", 0)):
 		CoreEvents.sync_completed.emit(slot)  # already in sync
 	else:
@@ -111,11 +117,12 @@ func pull(slot: int) -> void:
 			CoreEvents.sync_conflict.emit(slot, _local.read(slot), cloud_blob)
 
 
-func _decode(b64: String) -> Dictionary:
+## The decoded blob, or null when it is missing, refused or not a dictionary.
+func _decode(b64: String) -> Variant:
 	if b64 == "":
-		return {}
+		return null
 	var parsed = SaveCodec.decode(Marshalls.base64_to_raw(b64))
-	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else null
 
 
 func _conflict_policy() -> String:
