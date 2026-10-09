@@ -18,22 +18,39 @@ func unregister(save_id: String) -> void:
 	_saveables.erase(save_id)
 
 
-func write(slot: int = 0) -> void:
+## True when the slot reached disk. Emits save_written on success, save_failed otherwise.
+func write(slot: int = 0) -> bool:
 	var backend = _resolve()
 	if backend == null:
 		push_warning("[Save] no backend bound; write skipped.")
-		return
-	backend.write(slot, _capture())
+		CoreEvents.save_failed.emit(slot, "no backend")
+		return false
+	if not backend.write_checked(slot, _capture()):
+		CoreEvents.save_failed.emit(slot, "write failed")
+		return false
 	CoreEvents.save_written.emit(slot)
+	return true
 
 
-func read(slot: int = 0) -> void:
+## True when a slot was restored. A corrupt slot restores nothing and emits save_failed;
+## an empty or missing slot returns false quietly.
+func read(slot: int = 0) -> bool:
 	var backend = _resolve()
 	if backend == null:
 		push_warning("[Save] no backend bound; read skipped.")
-		return
-	_restore(backend.read(slot))
+		return false
+	var data = backend.read_checked(slot)
+	if data == null:
+		CoreEvents.save_failed.emit(slot, "slot is corrupt")
+		return false
+	if data.is_empty():
+		return false
+	_restore(data)
 	CoreEvents.save_loaded.emit(slot)
+	var source = backend.get("last_source")
+	if source != null and source != "":
+		CoreEvents.save_recovered.emit(slot, source)
+	return true
 
 
 func has_slot(slot: int = 0) -> bool:

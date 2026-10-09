@@ -99,6 +99,17 @@ Save.write(0)            # writes disk; syncs to the cloud if signed in + config
 await Save.pull(0)       # pull the cloud copy down, then Save.read(0)
 ```
 
+`Save.write(slot)` and `Save.read(slot)` return `bool`. `write` is true once the slot is
+safely on disk and emits `CoreEvents.save_written`. `read` is true only when a slot was
+restored and emits `CoreEvents.save_loaded`; an empty slot returns false quietly. A failed
+write or a corrupt slot emits `CoreEvents.save_failed(slot, reason)`, and a corrupt read
+restores nothing, so check the result before carrying on with empty state.
+
+If the slot file itself was unreadable or failed its checksum, `read` falls back to a
+leftover `.tmp` and then the `.bak` copy. It still restores and returns true, and also
+emits `CoreEvents.save_recovered(slot, source)` with `source` set to `"tmp"` or `"bak"`,
+so a game can tell the player their latest progress may be missing.
+
 Writes are **local-first**: disk first, cloud async. Cloud sync turns on
 automatically once the player is signed in and a backend is configured (see
 Online below). Conflicts arrive on `CoreEvents.sync_conflict(slot, local, cloud)`.

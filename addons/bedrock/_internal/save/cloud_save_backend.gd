@@ -13,6 +13,7 @@ extends Node
 ## set_session() once the player has a canonical session from POST /api/auth.
 
 const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_save_backend.gd")
+const SaveCodec := preload("res://addons/bedrock/_internal/save/save_codec.gd")
 
 var _local
 var _http: HTTPRequest
@@ -40,6 +41,17 @@ func write(slot: int, data: Dictionary) -> void:
 
 func read(slot: int) -> Dictionary:
 	return _local.read(slot)
+
+
+func write_checked(slot: int, data: Dictionary) -> bool:
+	var ok: bool = _local.write_checked(slot, data)
+	if ok and cloud_enabled():
+		_sync_up(slot, data)
+	return ok
+
+
+func read_checked(slot: int) -> Variant:
+	return _local.read_checked(slot)
 
 
 func list_slots() -> Array:
@@ -83,11 +95,17 @@ func pull(slot: int) -> void:
 
 	var cloud_unix := int(data.get("updated_unix", 0))
 	var cloud_blob := _decode(data.get("blob_base64", ""))
+	if cloud_blob == null:
+		CoreEvents.sync_failed.emit(slot, "cloud copy is unreadable")
+		return
 	var local = _local.meta(slot)
 
 	if not local.get("exists", false) or cloud_unix > int(local.get("updated_unix", 0)):
-		_local.write(slot, cloud_blob)  # cloud wins (or no local yet)
-		CoreEvents.sync_completed.emit(slot)
+		# cloud wins (or no local yet)
+		if _local.write_checked(slot, cloud_blob):
+			CoreEvents.sync_completed.emit(slot)
+		else:
+			CoreEvents.sync_failed.emit(slot, "could not write the cloud copy to disk")
 	elif cloud_unix == int(local.get("updated_unix", 0)):
 		CoreEvents.sync_completed.emit(slot)  # already in sync
 	else:
@@ -99,11 +117,12 @@ func pull(slot: int) -> void:
 			CoreEvents.sync_conflict.emit(slot, _local.read(slot), cloud_blob)
 
 
-func _decode(b64: String) -> Dictionary:
+## The decoded blob, or null when it is missing, refused or not a dictionary.
+func _decode(b64: String) -> Variant:
 	if b64 == "":
-		return {}
-	var parsed = str_to_var(Marshalls.base64_to_raw(b64).get_string_from_utf8())
-	return parsed if typeof(parsed) == TYPE_DICTIONARY else {}
+		return null
+	var parsed = SaveCodec.decode(Marshalls.base64_to_raw(b64))
+	return parsed if typeof(parsed) == TYPE_DICTIONARY else null
 
 
 func _conflict_policy() -> String:
@@ -116,12 +135,12 @@ func _sync_up(slot: int, data: Dictionary) -> void:
 	# One request: metadata + the (small, base64) blob go to the backend, which
 	# stores the blob in Vercel Blob and the metadata in Neon.
 	CoreEvents.sync_started.emit(slot)
-	var serialized := var_to_str(data)
+	var serialized := var_to_str(data)  # checksum input only, never parsed
 	var payload := {
 		"schema_version": int(data.get("__schema_version", 1)),
 		"checksum": serialized.sha256_text(),
 		"updated_unix": int(Time.get_unix_time_from_system()),
-		"blob_base64": Marshalls.raw_to_base64(serialized.to_utf8_buffer()),
+		"blob_base64": Marshalls.raw_to_base64(SaveCodec.encode(data)),
 	}
 	var headers := PackedStringArray([
 		"Authorization: Bearer " + _session,
