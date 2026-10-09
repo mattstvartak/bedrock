@@ -7,17 +7,16 @@ internals under `_internal/` can change in any patch.
 ## [0.2.0] - unreleased
 
 A review before the Witch Game builds on Bedrock found save and settings files
-could run code, and a few ways to lose a good save. Devil's Bank is affected
-by the same bugs and should take this release.
+could run code, and a few ways to lose a good save.
 
 ### Security
 - **Save files can no longer run code.** Loading went through `str_to_var`,
   which builds live objects, so a planted save (or one synced through Steam
   Cloud or shipped by a mod) could run a script. Saves are now written with
-  `var_to_bytes` and read with `bytes_to_var`, which refuses objects. Old text
-  saves still load, but only if they contain no `Object`, `Resource`,
-  `ExtResource` or `SubResource` token anywhere; anything else is treated as
-  corrupt and never parsed. They convert to the binary format on the next write.
+  `var_to_bytes` and read with `bytes_to_var`, which refuses objects.
+  **Breaking for existing saves:** the old text format is no longer read at all
+  and counts as corrupt. Devil's Bank, the only game with text saves, is no
+  longer developed.
 - **Settings moved from `settings.cfg` to `settings.json`.** `ConfigFile` uses
   the same object-building parser. The old file is left on disk but never read,
   so settings and key bindings reset to defaults once on upgrade.
