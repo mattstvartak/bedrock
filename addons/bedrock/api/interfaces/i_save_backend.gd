@@ -13,6 +13,18 @@ func read(_slot: int) -> Dictionary:
 	return {}
 
 
+## Same as write() but reports whether the data reached disk. Override it to report real
+## failures; the default assumes write() worked.
+func write_checked(slot: int, data: Dictionary) -> bool:
+	write(slot, data)
+	return true
+
+
+## Slot data, {} when the slot is empty, null when it exists but cannot be read.
+func read_checked(slot: int) -> Variant:
+	return read(slot)
+
+
 func list_slots() -> Array:
 	return []
 

@@ -11,6 +11,8 @@ const SaveCodec := preload("res://addons/bedrock/_internal/save/save_codec.gd")
 
 var _fails: Array[String] = []
 var _local := LocalSave.new()
+var _events: Array[String] = []
+var _state := {"level": 0}
 
 
 func _check(cond: bool, label: String) -> void:
@@ -66,6 +68,7 @@ func _ready() -> void:
 	_check(_local.read(SLOT) == old_blob, "legacy text save of plain data loads")
 
 	_test_recovery()
+	_test_facade()
 
 	_local.delete(SLOT)
 	DirAccess.remove_absolute(PLANT)
@@ -116,3 +119,63 @@ func _test_recovery() -> void:
 
 	_local.delete(SLOT)
 	_check(not FileAccess.file_exists(p) and not FileAccess.file_exists(p + ".bak") and not FileAccess.file_exists(p + ".tmp"), "delete removes slot, .bak and .tmp")
+
+
+class Probe extends ISaveable:
+	var state: Dictionary
+
+	func save_id() -> String:
+		return "probe"
+
+	func capture() -> Dictionary:
+		return {"level": state["level"]}
+
+	func restore(data: Dictionary) -> void:
+		state["level"] = data["level"]
+
+
+func _test_facade() -> void:
+	var probe := Probe.new()
+	probe.state = _state
+	var old_backend = Save._backend
+	Save._backend = _local
+	Save.register(probe)
+	var on_written := func(_s): _events.append("written")
+	var on_loaded := func(_s): _events.append("loaded")
+	var on_failed := func(_s, _r): _events.append("failed")
+	CoreEvents.save_written.connect(on_written)
+	CoreEvents.save_loaded.connect(on_loaded)
+	CoreEvents.save_failed.connect(on_failed)
+	var p := _slot_path()
+	_local.delete(SLOT)
+
+	_state["level"] = 5
+	_events.clear()
+	_check(Save.write(SLOT) and _events == ["written"], "facade write ok emits save_written")
+	_state["level"] = 0
+	_events.clear()
+	_check(Save.read(SLOT) and _events == ["loaded"] and _state["level"] == 5, "facade read ok restores and emits save_loaded")
+
+	_local._test_short_write = true
+	_events.clear()
+	_check(not Save.write(SLOT) and _events == ["failed"], "facade failed write emits save_failed only")
+	_local._test_short_write = false
+
+	_local.delete(SLOT)
+	_state["level"] = 3
+	_events.clear()
+	_check(not Save.read(SLOT) and _events.is_empty() and _state["level"] == 3, "facade read of empty slot is false, silent")
+
+	for ext in ["", ".bak", ".tmp"]:
+		var g := FileAccess.open(p + ext, FileAccess.WRITE)
+		g.store_string("junk")
+		g.close()
+	_events.clear()
+	_check(not Save.read(SLOT) and _events == ["failed"] and _state["level"] == 3, "facade read of corrupt slot fails, restores nothing")
+
+	CoreEvents.save_written.disconnect(on_written)
+	CoreEvents.save_loaded.disconnect(on_loaded)
+	CoreEvents.save_failed.disconnect(on_failed)
+	Save.unregister("probe")
+	Save._backend = old_backend
+	_local.delete(SLOT)

@@ -43,6 +43,17 @@ func read(slot: int) -> Dictionary:
 	return _local.read(slot)
 
 
+func write_checked(slot: int, data: Dictionary) -> bool:
+	var ok: bool = _local.write_checked(slot, data)
+	if ok and cloud_enabled():
+		_sync_up(slot, data)
+	return ok
+
+
+func read_checked(slot: int) -> Variant:
+	return _local.read_checked(slot)
+
+
 func list_slots() -> Array:
 	return _local.list_slots()
 
