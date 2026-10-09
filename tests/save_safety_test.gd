@@ -65,6 +65,8 @@ func _ready() -> void:
 	}))
 	_check(_local.read(SLOT) == old_blob, "legacy text save of plain data loads")
 
+	_test_recovery()
+
 	_local.delete(SLOT)
 	DirAccess.remove_absolute(PLANT)
 
@@ -74,3 +76,43 @@ func _ready() -> void:
 	else:
 		print("== FAILURES: %s ==" % ", ".join(_fails))
 		get_tree().quit(1)
+
+
+func _test_recovery() -> void:
+	var v1 := {"level": 1}
+	var v2 := {"level": 2}
+	var p := _slot_path()
+	_local.delete(SLOT)
+	_local.write(SLOT, v1)
+
+	_local._test_short_write = true
+	_check(not _local.write_checked(SLOT, v2), "short write reports failure")
+	_local._test_short_write = false
+	_check(_local.read(SLOT) == v1, "failed write keeps previous save")
+	_check(not FileAccess.file_exists(p + ".tmp"), "failed write cleans up temp")
+
+	_check(_local.write_checked(SLOT, v2) and FileAccess.file_exists(p + ".bak"), "good write keeps a .bak")
+	_check(_local.read(SLOT) == v2, "good write replaces slot")
+
+	var full := FileAccess.get_file_as_bytes(p)
+	var f := FileAccess.open(p, FileAccess.WRITE)
+	f.store_buffer(full.slice(0, full.size() / 2))
+	f.close()
+	_check(_local.read(SLOT) == v1, "truncated slot falls back to .bak")
+
+	_local.delete(SLOT)
+	_check(_local.read_checked(SLOT) is Dictionary and _local.read_checked(SLOT).is_empty(), "empty slot reads as {}")
+	_local.write(SLOT, v1)
+	DirAccess.rename_absolute(p, p + ".tmp")
+	_check(_local.read(SLOT) == v1, "valid .tmp with missing slot is recovered")
+	_check(_local.list_slots().has(SLOT), "recoverable slot is listed once")
+
+	for ext in ["", ".bak", ".tmp"]:
+		var g := FileAccess.open(p + ext, FileAccess.WRITE)
+		g.store_string("junk")
+		g.close()
+	_check(_local.read_checked(SLOT) == null, "all copies corrupt reads as null")
+	_check(_local.read(SLOT).is_empty(), "read() maps corrupt to {}")
+
+	_local.delete(SLOT)
+	_check(not FileAccess.file_exists(p) and not FileAccess.file_exists(p + ".bak") and not FileAccess.file_exists(p + ".tmp"), "delete removes slot, .bak and .tmp")
