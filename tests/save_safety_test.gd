@@ -1,6 +1,6 @@
 extends Node
 ## Save safety test. A save file must never run code when it is loaded, and old
-## text-format saves of plain data must still load.
+## text-format saves are refused, never parsed.
 ## Run: godot --headless --path . res://tests/save_safety_test.tscn
 ## Exits 0 on pass, 1 on any failure (so CI can gate on it).
 
@@ -63,12 +63,12 @@ func _ready() -> void:
 	_check(back == data and typeof(back["level"]) == TYPE_INT, "round trip keeps values and types")
 	_check(FileAccess.get_file_as_bytes(_slot_path())[0] != 0x7b, "new saves are binary")
 
-	# Old plain-data text save still loads.
+	# Old text saves are refused even when they hold only plain data.
 	var old_blob := {"level": 3, "gold": 40}
 	_put_text(var_to_str({
 		"slot": SLOT, "updated_unix": 1, "checksum": var_to_str(old_blob).sha256_text(), "blob": old_blob,
 	}))
-	_check(_local.read(SLOT) == old_blob, "legacy text save of plain data loads")
+	_check(_local.read(SLOT).is_empty(), "legacy text save is refused")
 
 	_test_recovery()
 	_test_object_write()
