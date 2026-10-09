@@ -66,6 +66,26 @@ func _ready() -> void:
 	_check((kinds["InputEventJoypadMotion"] as InputEvent).device == -1, "stick restored on all devices when none was saved")
 	_check(Controls.events_for("test_multi").size() == 4, "unknown and malformed entries skipped")
 
+	# Rebinding one kind of event leaves the other kinds alone.
+	InputMap.add_action("test_kinds")
+	for e in [ka, stick, mouse, pad_btn]:
+		InputMap.action_add_event("test_kinds", e)
+	var kb := InputEventKey.new()
+	kb.physical_keycode = KEY_B
+	Controls.rebind("test_kinds", kb)
+	var mb2 := InputEventMouseButton.new()
+	mb2.button_index = MOUSE_BUTTON_LEFT
+	Controls.rebind("test_kinds", mb2)
+	var pb2 := InputEventJoypadButton.new()
+	pb2.button_index = JOY_BUTTON_Y
+	Controls.rebind("test_kinds", pb2)
+	var st2 := InputEventJoypadMotion.new()
+	st2.axis = JOY_AXIS_LEFT_Y
+	Controls.rebind("test_kinds", st2)
+	_check(Controls.events_for("test_kinds").size() == 4, "rebind kept one event per kind")
+	_check(Controls.events_for("test_kinds").has(kb) and Controls.events_for("test_kinds").has(mb2), "key and mouse rebinds are separate")
+	_check(Controls.events_for("test_kinds").has(pb2) and Controls.events_for("test_kinds").has(st2), "pad button and stick rebinds are separate")
+
 	# --- Locale ---
 	var before := Locale.get_locale()
 	Locale.set_locale("es")

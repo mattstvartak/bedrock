@@ -16,15 +16,13 @@ func _ready() -> void:
 	load_bindings()
 
 
-## Replace the action's event of the same device class (keyboard vs joypad) with
-## `event`, keeping the other class so a player keeps both a key and a pad binding.
+## Replace the action's events of the same kind (key, mouse button, pad button or
+## stick) with `event`, keeping the other kinds so a player keeps all their bindings.
 func rebind(action: StringName, event: InputEvent) -> void:
 	if not InputMap.has_action(action):
 		return
-	var is_pad := event is InputEventJoypadButton or event is InputEventJoypadMotion
 	for e in InputMap.action_get_events(action):
-		var e_pad := e is InputEventJoypadButton or e is InputEventJoypadMotion
-		if e_pad == is_pad:
+		if e.get_class() == event.get_class():
 			InputMap.action_erase_event(action, e)
 	InputMap.action_add_event(action, event)
 	rebound.emit(action, event)
