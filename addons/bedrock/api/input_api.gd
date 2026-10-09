@@ -83,37 +83,69 @@ func save_bindings() -> void:
 
 
 func load_bindings() -> void:
-	var data: Dictionary = Settings.get_value(_SECTION, "bindings", {})
+	var data: Variant = Settings.get_value(_SECTION, "bindings", {})
+	if not data is Dictionary:
+		return
 	for action_str in data:
 		var action := StringName(action_str)
-		if not InputMap.has_action(action):
+		if not InputMap.has_action(action) or not data[action_str] is Array:
+			continue
+		var events: Array[InputEvent] = []
+		for d in data[action_str]:
+			var e := _dict_to_event(d) if d is Dictionary else null
+			if e != null:
+				events.append(e)
+		# Keep the project defaults if nothing in the saved entry was usable.
+		if events.is_empty():
 			continue
 		InputMap.action_erase_events(action)
-		for d in data[action_str]:
-			var e := _dict_to_event(d)
-			if e != null:
-				InputMap.action_add_event(action, e)
+		for e in events:
+			InputMap.action_add_event(action, e)
 
 
 func _event_to_dict(e: InputEvent) -> Dictionary:
+	var d := {"dev": e.device}
 	if e is InputEventKey:
-		return {"t": "key", "code": (e as InputEventKey).physical_keycode}
-	if e is InputEventJoypadButton:
-		return {"t": "pad", "btn": (e as InputEventJoypadButton).button_index}
-	return {}
+		var k := e as InputEventKey
+		d.merge({"t": "key", "phys": k.physical_keycode, "code": k.keycode})
+	elif e is InputEventJoypadButton:
+		d.merge({"t": "pad", "btn": (e as InputEventJoypadButton).button_index})
+	elif e is InputEventJoypadMotion:
+		var m := e as InputEventJoypadMotion
+		d.merge({"t": "axis", "axis": m.axis, "val": m.axis_value})
+	elif e is InputEventMouseButton:
+		d.merge({"t": "mouse", "btn": (e as InputEventMouseButton).button_index})
+	else:
+		return {}
+	return d
 
 
 func _dict_to_event(d: Dictionary) -> InputEvent:
+	var e: InputEvent = null
 	match d.get("t", ""):
 		"key":
 			var k := InputEventKey.new()
-			k.physical_keycode = int(d.get("code", 0))
-			return k
+			# Older saves only stored "code", which was the physical keycode.
+			k.physical_keycode = int(d.get("phys", d.get("code", 0)))
+			k.keycode = int(d.get("code", 0)) if d.has("phys") else 0
+			e = k
 		"pad":
 			var b := InputEventJoypadButton.new()
 			b.button_index = int(d.get("btn", 0))
-			return b
-	return null
+			e = b
+		"axis":
+			var m := InputEventJoypadMotion.new()
+			m.axis = int(d.get("axis", 0))
+			m.axis_value = signf(float(d.get("val", 1.0)))
+			e = m
+		"mouse":
+			var mb := InputEventMouseButton.new()
+			mb.button_index = int(d.get("btn", 1))
+			e = mb
+		_:
+			return null
+	e.device = int(d.get("dev", -1))
+	return e
 
 
 func _pad_glyph(btn: int, family: Family) -> String:
