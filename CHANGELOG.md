@@ -4,6 +4,49 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## [0.2.0] - unreleased
+
+A review before the Witch Game builds on Bedrock found save and settings files
+could run code, and a few ways to lose a good save. Devil's Bank is affected
+by the same bugs and should take this release.
+
+### Security
+- **Save files can no longer run code.** Loading went through `str_to_var`,
+  which builds live objects, so a planted save (or one synced through Steam
+  Cloud or shipped by a mod) could run a script. Saves are now written with
+  `var_to_bytes` and read with `bytes_to_var`, which refuses objects. Old text
+  saves still load, but only if they contain no `Object`, `Resource`,
+  `ExtResource` or `SubResource` token anywhere; anything else is treated as
+  corrupt and never parsed. They convert to the binary format on the next write.
+- **Settings moved from `settings.cfg` to `settings.json`.** `ConfigFile` uses
+  the same object-building parser. The old file is left on disk but never read,
+  so settings and key bindings reset to defaults once on upgrade.
+
+### Fixed
+- A failed or short save write no longer replaces the last good save. The temp
+  file is verified (decode and checksum) before the rename, the previous good
+  slot is kept as `.bak`, and reads fall back to `.tmp` and then `.bak`.
+- A cloud copy that can't be decoded no longer overwrites a good local save;
+  the pull emits `sync_failed` and writes nothing.
+- Settings writes are atomic and checked, every saved setting (fullscreen
+  included) is applied at boot, a leftover `settings.json.tmp` is recovered,
+  and a corrupt file is kept as `settings.json.corrupt` before defaults are
+  written. The settings panel saves on slider release, not every step.
+- Rebinding no longer wipes other bindings. Stick, trigger and mouse bindings
+  persist, rebinding one input family (keys, mouse buttons, pad buttons,
+  sticks) leaves the others alone, and restored pad bindings answer every
+  controller, not just the first.
+
+### Changed (API)
+- `Save.write(slot)` and `Save.read(slot)` return `bool`. A failed write emits
+  the new `save_failed(slot, reason)` signal instead of `save_written`. A
+  corrupt slot emits `save_failed`, restores nothing and doesn't emit
+  `save_loaded`; an empty slot returns false quietly.
+- New `save_recovered(slot, source)` signal when a read came from `.tmp` or
+  `.bak`.
+- `ISaveBackend` gains `write_checked` and `read_checked` with default
+  implementations, so existing backends keep working.
+
 ## [0.1.2] - 2026-06-30
 
 ### Fixed
