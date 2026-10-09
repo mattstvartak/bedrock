@@ -25,9 +25,8 @@ func _ready() -> void:
 	# Settings persist to disk and drive the audio buses.
 	Settings.set_value("audio", "Music", 0.25)
 	Settings.save_settings()
-	var reloaded := ConfigFile.new()
-	reloaded.load(Settings.PATH)
-	_check(reloaded.get_value("audio", "Music", -1.0) == 0.25, "settings persisted to disk")
+	Settings.load_settings()
+	_check(Settings.get_value("audio", "Music", -1.0) == 0.25, "settings persisted to disk")
 	_check(absf(Audio.get_bus_volume("Music") - 0.25) < 0.02, "Music bus volume applied from settings")
 
 	# Scenes overlay stack, fileless via a runtime-built PackedScene.

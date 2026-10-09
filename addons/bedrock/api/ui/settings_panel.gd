@@ -35,6 +35,7 @@ func _ready() -> void:
 		slider.custom_minimum_size.x = 220
 		slider.value = float(Settings.get_value("audio", bus, 1.0))
 		slider.value_changed.connect(_on_volume.bind(bus))
+		slider.drag_ended.connect(_on_drag_ended)
 		row.add_child(label)
 		row.add_child(slider)
 		vbox.add_child(row)
@@ -48,7 +49,9 @@ func _ready() -> void:
 
 	var back := Button.new()
 	back.text = "Back"
-	back.pressed.connect(func(): closed.emit())
+	back.pressed.connect(func():
+		Settings.save_settings()
+		closed.emit())
 	vbox.add_child(back)
 
 	# Controller/keyboard focus starts on the first slider.
@@ -64,12 +67,17 @@ func set_volume(bus: String, value: float) -> void:
 
 func _on_volume(value: float, bus: String) -> void:
 	Settings.set_value("audio", bus, value)  # Settings applies it to the Audio bus
+
+
+# Save once the slider is let go, not on every step.
+func _on_drag_ended(_changed: bool) -> void:
+	Settings.save_settings()
+
+
+func _exit_tree() -> void:
 	Settings.save_settings()
 
 
 func _on_fullscreen(on: bool) -> void:
 	Settings.set_value("video", "fullscreen", on)
 	Settings.save_settings()
-	DisplayServer.window_set_mode(
-		DisplayServer.WINDOW_MODE_FULLSCREEN if on else DisplayServer.WINDOW_MODE_WINDOWED
-	)
