@@ -4,7 +4,7 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
-## [0.2.0] - unreleased
+## [0.2.0] - 2026-10-08
 
 A review before the Witch Game builds on Bedrock found save and settings files
 could run code, and a few ways to lose a good save.
