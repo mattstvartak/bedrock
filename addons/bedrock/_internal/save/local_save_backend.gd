@@ -84,26 +84,24 @@ func read_checked(slot: int) -> Variant:
 		found = true
 		var envelope = _load(p)
 		if envelope == null:
-			push_error("[LocalSave] %s is corrupt or unreadable" % p)
-			continue
-		var blob: Dictionary = envelope["blob"]
-		if envelope.get("checksum", "") != var_to_str(blob).sha256_text():
-			push_error("[LocalSave] checksum mismatch in %s (file edited or corrupted)" % p)
+			push_error("[LocalSave] %s is corrupt, unreadable or fails its checksum" % p)
 			continue
 		if p.ends_with(TMP):
 			last_source = "tmp"
 		elif p.ends_with(BAK):
 			last_source = "bak"
-		return blob
+		return envelope["blob"]
 	return null if found else {}
 
 
-## The decoded envelope at a path, or null when it is missing, undecodable or has no blob.
+## The decoded envelope at a path, or null when it is missing, undecodable, has no blob or fails its checksum.
 func _load(path: String) -> Variant:
 	if not FileAccess.file_exists(path):
 		return null
 	var envelope = SaveCodec.decode(FileAccess.get_file_as_bytes(path))
 	if typeof(envelope) != TYPE_DICTIONARY or not envelope.has("blob") or typeof(envelope["blob"]) != TYPE_DICTIONARY:
+		return null
+	if envelope.get("checksum", "") != var_to_str(envelope["blob"]).sha256_text():
 		return null
 	return envelope
 

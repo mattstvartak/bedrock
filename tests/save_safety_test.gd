@@ -71,6 +71,7 @@ func _ready() -> void:
 	_check(_local.read(SLOT) == old_blob, "legacy text save of plain data loads")
 
 	_test_recovery()
+	_test_object_write()
 	_test_fallback_order()
 	_test_cloud_decode()
 	_test_facade()
@@ -124,6 +125,21 @@ func _test_recovery() -> void:
 
 	_local.delete(SLOT)
 	_check(not FileAccess.file_exists(p) and not FileAccess.file_exists(p + ".bak") and not FileAccess.file_exists(p + ".tmp"), "delete removes slot, .bak and .tmp")
+
+
+func _test_object_write() -> void:
+	var good := {"level": 1}
+	var bad := {"level": 2, "thing": RefCounted.new()}
+	var p := _slot_path()
+	_local.delete(SLOT)
+	_local.write(SLOT, good)
+	_check(not _local.write_checked(SLOT, bad), "write holding an Object reports failure")
+	_check(not _local.write_checked(SLOT, bad), "second Object write also reports failure")
+	_check(not FileAccess.file_exists(p + ".tmp"), "Object write cleans up temp")
+	_check(_local.read_checked(SLOT) == good, "good save survives Object writes")
+	if FileAccess.file_exists(p + ".bak"):
+		_check(_local.read_checked(SLOT) == good, "bak never holds a bad slot")
+	_local.delete(SLOT)
 
 
 func _raw_save(path: String, data: Dictionary) -> void:
@@ -235,6 +251,11 @@ func _test_facade() -> void:
 	_events.clear()
 	_check(not Save.write(SLOT) and _events == ["failed"], "facade failed write emits save_failed only")
 	_local._test_short_write = false
+
+	probe.state = {"level": RefCounted.new()}
+	_events.clear()
+	_check(not Save.write(SLOT) and _events == ["failed"], "facade Object write emits save_failed only")
+	probe.state = _state
 
 	_local.delete(SLOT)
 	_state["level"] = 3
