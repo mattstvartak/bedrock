@@ -60,6 +60,35 @@ func _ready() -> void:
 	Settings.load_settings()
 	_check(Settings.get_value("video", "fullscreen", false) == false, "garbage file gives defaults")
 
+	# crash between remove and rename leaves only the tmp file
+	DirAccess.remove_absolute(TMP)
+	DirAccess.remove_absolute(TMP + ".corrupt")
+	var t := FileAccess.open(TMP + ".tmp", FileAccess.WRITE)
+	t.store_string('{"audio": {"Music": 0.4}}')
+	t.close()
+	Settings.load_settings()
+	_check(is_equal_approx(float(Settings.get_value("audio", "Music", 1.0)), 0.4), "missing json loads the tmp")
+	_check(Settings.save_settings(), "save after tmp recovery")
+	_check(FileAccess.file_exists(TMP), "recovered values written back to json")
+	DirAccess.remove_absolute(TMP + ".tmp")
+
+	# corrupt json with no tmp is kept as .corrupt before a save overwrites it
+	_write("{not json")
+	Settings.load_settings()
+	_check(FileAccess.get_file_as_string(TMP + ".corrupt") == "{not json", "corrupt json copied aside")
+	Settings.save_settings()
+	_check(FileAccess.get_file_as_string(TMP + ".corrupt") == "{not json", ".corrupt survives the next save")
+
+	# corrupt json with a good tmp uses the tmp
+	_write("{not json")
+	t = FileAccess.open(TMP + ".tmp", FileAccess.WRITE)
+	t.store_string('{"audio": {"Music": 0.7}}')
+	t.close()
+	Settings.load_settings()
+	_check(is_equal_approx(float(Settings.get_value("audio", "Music", 1.0)), 0.7), "corrupt json falls back to tmp")
+	DirAccess.remove_absolute(TMP + ".tmp")
+	DirAccess.remove_absolute(TMP + ".corrupt")
+
 	# old settings.cfg is ignored and left alone
 	var cfg_path := real_path.get_base_dir() + "/settings_test_old.cfg"
 	var cfg := FileAccess.open(cfg_path, FileAccess.WRITE)
@@ -83,6 +112,7 @@ func _ready() -> void:
 	_check(not FileAccess.file_exists(TMP + ".tmp"), "no temp file left behind")
 
 	DirAccess.remove_absolute(TMP)
+	DirAccess.remove_absolute(TMP + ".corrupt")
 	Settings.path = real_path
 	Settings.load_settings()
 	print("ALL PASS" if _fails.is_empty() else "FAILURES: %s" % ", ".join(_fails))

@@ -22,11 +22,22 @@ func _ready() -> void:
 
 func load_settings() -> void:
 	_data = {}
-	if FileAccess.file_exists(path):
-		var parsed = JSON.parse_string(FileAccess.get_file_as_string(path))
-		if parsed is Dictionary:
-			_data = _clean(parsed)
+	var parsed = _read_dict(path)
+	if parsed == null:
+		parsed = _read_dict(path + ".tmp")
+		if parsed == null and FileAccess.file_exists(path):
+			DirAccess.copy_absolute(path, path + ".corrupt")
+			push_warning("Settings: %s is unreadable, copied to %s.corrupt and using defaults" % [path, path])
+	if parsed != null:
+		_data = _clean(parsed)
 	_apply_all()
+
+
+func _read_dict(file: String):
+	if not FileAccess.file_exists(file):
+		return null
+	var parsed = JSON.parse_string(FileAccess.get_file_as_string(file))
+	return parsed if parsed is Dictionary else null
 
 
 func save_settings() -> bool:
