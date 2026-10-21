@@ -34,8 +34,8 @@ func _wait(cond: Callable, seconds: float) -> bool:
 func _ready() -> void:
 	var role := OS.get_environment("BEDROCK_P2P_ROLE")
 	print("== eos p2p live test (%s) ==" % role)
-	if not Engine.has_singleton("EOSConnect"):
-		print("  [SKIP] GD-EOS not installed")
+	if role.is_empty() or not Engine.has_singleton("EOSConnect"):
+		print("  [SKIP] live EOS P2P (run scripts/test-eos-p2p-live.sh with GD-EOS installed)")
 		_finish()
 		return
 	CoreEvents.identity_changed.connect(func(a) -> void: _account = a)
@@ -72,7 +72,7 @@ func _client(puid: String) -> void:
 	_check(host != puid, "the client has its own PUID")
 	var joined := [false]
 	multiplayer.connected_to_server.connect(func() -> void: joined[0] = true)
-	_check(Net.join_online(EOSProductUserId.from_string(host), SOCKET), "join_online by the host's PUID")
+	_check(Net.join_online(ClassDB.class_call_static("EOSProductUserId", "from_string", host), SOCKET), "join_online by the host's PUID")
 	_check(await _wait(func() -> bool: return joined[0], 60.0), "connected to the host")
 	Net.send({"ping": "from client"}, 1)
 	_check(await _wait(func() -> bool: return _got != null, 30.0), "the host's reply arrives")
