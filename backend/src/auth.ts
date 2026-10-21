@@ -1,3 +1,4 @@
+import { verifyEosIdToken } from "./eos";
 import { verifySession } from "./jwt";
 
 // Validate a platform token and return a stable platform id, or null.
@@ -7,9 +8,7 @@ export async function validatePlatformToken(env: Env, platform: string, token: s
 			return validateSteam(env, token);
 		case "device":
 		case "epic":
-			// Device ID / EOS PUID. For the MVP the client sends its own id; harden
-			// by verifying the EOS id token server-side before trusting it in prod.
-			return token || null;
+			return verifyEosIdToken(env, token);
 		default:
 			// psn / xbox / switch: validate against the platform's token service.
 			return null;

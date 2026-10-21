@@ -35,10 +35,16 @@ func _ready() -> void:
 		print("  [SKIP] set BEDROCK_BACKEND_LIVE=1 (see scripts/test-backend-live.sh) to run")
 		_finish()
 		return
+	if not Engine.has_singleton("EOSConnect"):
+		print("  [SKIP] the backend only accepts Epic ID tokens; run scripts/fetch-eos.sh first")
+		_finish()
+		return
 
+	var account = await _login()
+	# The bridge also signs in on identity_changed, so it joins after the login.
 	var bridge := BridgeScript.new()
 	add_child(bridge)
-	var session := await _authenticate(bridge)
+	var session := await _authenticate(bridge, account)
 	_check(session != "", "got a backend session from /api/auth")
 	var save = Platform.get_backend(Platform.SAVE)
 	save.set_session(session)
@@ -62,11 +68,30 @@ func _ready() -> void:
 	_finish()
 
 
-func _authenticate(bridge) -> String:
+func _login():
+	var who := {"account": null}
+	CoreEvents.identity_changed.connect(func(a): who.account = a)
+	Identity.login()
+	var frames := 0
+	while who.account == null and frames < 1500:
+		await get_tree().process_frame
+		frames += 1
+	_check(who.account != null, "device id login")
+	return who.account
+
+
+func _authenticate(bridge, account) -> String:
+	if account == null:
+		return ""
+	_check(await _post(bridge, account.canonical_uuid) == "", "a bare PUID is refused")
+	return await _post(bridge, Platform.get_backend(Platform.IDENTITY).id_token())
+
+
+func _post(bridge, token: String) -> String:
 	# Lambdas capture locals by value, so share state through a Dictionary (a
 	# reference) the callback can mutate.
 	var st := {"done": false, "session": ""}
-	bridge.authenticate("device", "cloud-sync-test-device", func(s): st.session = s; st.done = true)
+	bridge.authenticate("device", token, func(s): st.session = s; st.done = true)
 	var frames := 0
 	while not st.done and frames < 600:
 		await get_tree().process_frame

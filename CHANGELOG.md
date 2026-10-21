@@ -4,6 +4,11 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## Unreleased
+
+### Security
+- The cloud save backend only accepts Epic's signed ID token for device and Epic sign-in, checked against Epic's keys, our client and our product. It used to trust whatever PUID the game sent, and PUIDs are visible to everyone in an online session. The game now sends `EOSConnect.copy_id_token` and skips cloud sync when there is none.
+
 ## [0.3.1] - 2026-10-21
 
 The first live EOS crossplay check found the player id was never Epic's, and

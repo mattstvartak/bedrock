@@ -75,6 +75,12 @@ func login_steam(ticket: String, display_name := "Player") -> void:
 	_login_external(EOS.ExternalCredentialType.ECT_STEAM_SESSION_TICKET, ticket, display_name)
 
 
+## Epic's signed ID token for a logged-in PUID, for the backend to verify. "" when there isn't one.
+func id_token(puid: String) -> String:
+	var t = EOSConnect.copy_id_token(EOSProductUserId.from_string(puid))
+	return t.json_web_token if t != null else ""
+
+
 func _do_login(display_name: String) -> void:
 	_login_external(EOS.ExternalCredentialType.ECT_DEVICEID_ACCESS_TOKEN, "", display_name)
 

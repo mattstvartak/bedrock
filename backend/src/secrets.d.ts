@@ -2,4 +2,7 @@
 interface Env {
 	JWT_SIGNING_KEY: string;
 	STEAM_WEB_API_KEY?: string;
+	EOS_CLIENT_ID: string;
+	EOS_PRODUCT_ID: string;
+	EOS_JWKS?: string; // tests only: Epic's key set as JSON instead of fetching it
 }

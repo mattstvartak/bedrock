@@ -24,7 +24,7 @@ One Cloudflare Worker (`src/index.ts`) over D1 and a private R2 bucket
 
 Doppler project `bedrock` is the source. Set on the Worker with
 `doppler secrets get KEY --plain --config prd | npx wrangler secret put KEY --env production`
-(never echo the value). Required: `JWT_SIGNING_KEY`. Optional: `STEAM_WEB_API_KEY`
+(never echo the value). Required: `JWT_SIGNING_KEY`, `EOS_CLIENT_ID`, `EOS_PRODUCT_ID`. Optional: `STEAM_WEB_API_KEY`
 (`STEAM_APP_ID` is a var in `wrangler.jsonc`).
 
 ## Endpoints
@@ -41,8 +41,13 @@ Doppler project `bedrock` is the source. Set on the Worker with
 `npm install && npm run typecheck && npm test`, apply migrations with
 `npx wrangler d1 migrations apply DB --env production --remote`, then
 `npx wrangler deploy --env production`. Verify live with
-`scripts/test-backend-live.sh` from the repo root or curl `/api/auth` with a
-device token.
+`scripts/test-backend-live.sh` from the repo root (needs GD-EOS: it signs in to
+Epic for a real ID token).
+
+- **Device and Epic sign-in take Epic's ID token, never a bare PUID.** `src/eos.ts`
+  checks the RS256 signature against Epic's JWKS, the issuer, `aud` (our client id),
+  `pfpid` (our product) and `exp`, and uses `sub` as the platform id. Tests sign
+  their own tokens with a key from `vitest.config.ts` passed in as `EOS_JWKS`.
 
 ## Game side
 

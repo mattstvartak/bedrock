@@ -27,7 +27,8 @@ is the R2 object key, informational only; the game reads `blob_base64`.
    `wrangler.jsonc` (the `TODO` placeholders).
 2. Apply the schema: `npx wrangler d1 migrations apply DB --env production --remote`.
 3. Secrets, from Doppler without printing them:
-   `doppler secrets get JWT_SIGNING_KEY --plain --config prd | npx wrangler secret put JWT_SIGNING_KEY --env production`
+   `doppler secrets get JWT_SIGNING_KEY --plain --config prd | npx wrangler secret put JWT_SIGNING_KEY --env production`,
+   and the same for `EOS_CLIENT_ID` and `EOS_PRODUCT_ID`
    and the same for `STEAM_WEB_API_KEY` if using Steam login. `STEAM_APP_ID` is a var in `wrangler.jsonc`.
 4. `npx wrangler deploy --env production`. Production answers at
    https://saves.onenomad.studio, dev at https://bedrock-backend-dev.wandering-darkness-dd7b.workers.dev.

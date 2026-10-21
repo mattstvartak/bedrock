@@ -30,10 +30,14 @@ func session() -> String:
 func _on_identity_changed(account) -> void:
 	if account == null or not enabled():
 		return
-	# Exchange the player's id for a backend session. The platform tag refines as
-	# real credentials land (steam/console); device covers the anonymous/EOS case.
+	# The backend only trusts Epic's signed ID token, never the bare PUID, so with
+	# no token there is no cloud sync.
+	var identity = Platform.get_backend(Platform.IDENTITY)
+	var token: String = identity.id_token() if identity != null and identity.has_method("id_token") else ""
+	if token == "":
+		return
 	var platform := "epic" if not account.is_anonymous else "device"
-	authenticate(platform, str(account.canonical_uuid), func(token): _apply_session(token))
+	authenticate(platform, token, func(session): _apply_session(session))
 
 
 ## POST /api/auth, return the session via on_done(session) ("" on failure).

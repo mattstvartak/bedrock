@@ -40,6 +40,11 @@ func login_steam(ticket: String) -> void:
 	_gateway.login_steam(ticket)
 
 
+## Epic's signed ID token for the current player, "" when logged out.
+func id_token() -> String:
+	return _gateway.id_token(_account.canonical_uuid) if _logged_in and _gateway != null else ""
+
+
 func logout() -> void:
 	_logged_in = false
 	_account = null
