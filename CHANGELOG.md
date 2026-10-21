@@ -4,6 +4,20 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## [0.3.1] - 2026-10-21
+
+The first live EOS crossplay check found the player id was never Epic's, and
+the cloud save backend left Vercel and Neon for Cloudflare.
+
+### Fixed
+- The EOS identity's `canonical_uuid` is now Epic's 32 character PUID. It was Godot's object label for the id, which changed every launch, so a client couldn't join a host by it and the cloud backend made a new account each run.
+
+### Changed
+- The cloud save backend is a Cloudflare Worker with D1 and R2, live at https://saves.onenomad.studio. Same endpoints and shapes; `blob_url` is now an R2 object key.
+
+### Added
+- `scripts/test-eos-p2p-live.sh`: two processes host and join over EOS P2P by PUID and swap a message each way.
+
 ## [0.3.0] - 2026-10-21
 
 Nomad Game Studio's co-op needed games to send their own data between players

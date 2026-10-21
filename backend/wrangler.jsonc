@@ -1,0 +1,23 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bedrock-backend",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"vars": { "STEAM_APP_ID": "0" },
+	"d1_databases": [{ "binding": "DB", "database_name": "bedrock-dev", "database_id": "3d9505d7-3d62-4d18-96e1-df66aaff7d2a", "migrations_dir": "migrations" }],
+	"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-dev" }],
+	"env": {
+		"dev": {
+			"vars": { "STEAM_APP_ID": "0" },
+			"d1_databases": [{ "binding": "DB", "database_name": "bedrock-dev", "database_id": "3d9505d7-3d62-4d18-96e1-df66aaff7d2a", "migrations_dir": "migrations" }],
+			"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-dev" }]
+		},
+		"production": {
+			"routes": [{ "pattern": "saves.onenomad.studio", "custom_domain": true }],
+			"vars": { "STEAM_APP_ID": "0" },
+			"d1_databases": [{ "binding": "DB", "database_name": "bedrock-prod", "database_id": "115a467a-b569-4d2f-9ce6-b666830b2f84", "migrations_dir": "migrations" }],
+			"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-prod" }]
+		}
+	}
+}
