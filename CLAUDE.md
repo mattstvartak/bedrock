@@ -111,7 +111,7 @@ scripts/test-backend-live.sh  # live cloud-save round-trip (BEDROCK_BACKEND_LIVE
 ## Backend
 
 The canonical-account + cross-platform-save service lives in `backend/` (Cloudflare
-Worker + D1 + R2). The Vercel deployment is live until the Worker is cut over. See `backend/CLAUDE.md` for its specifics
+Worker + D1 + R2), live at https://saves.onenomad.studio. See `backend/CLAUDE.md` for its specifics
 and gotchas, and `backend/README.md` for endpoints + deploy.
 
 ## State of the world

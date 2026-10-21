@@ -29,8 +29,9 @@ is the R2 object key, informational only; the game reads `blob_base64`.
 3. Secrets, from Doppler without printing them:
    `doppler secrets get JWT_SIGNING_KEY --plain --config prd | npx wrangler secret put JWT_SIGNING_KEY --env production`
    and the same for `STEAM_WEB_API_KEY` if using Steam login. `STEAM_APP_ID` is a var in `wrangler.jsonc`.
-4. `npx wrangler deploy --env production`, then point the game's `BEDROCK_BACKEND_URL`
-   at the worker URL.
+4. `npx wrangler deploy --env production`. Production answers at
+   https://saves.onenomad.studio, dev at https://bedrock-backend-dev.wandering-darkness-dd7b.workers.dev.
+   `BEDROCK_BACKEND_URL` in Doppler points the game at them.
 
 Local: `npm install`, copy `.dev.vars.example` to `.dev.vars`, `npm run dev`.
 Checks: `npm run typecheck && npm test`.

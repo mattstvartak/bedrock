@@ -3,7 +3,7 @@ extends IIdentityProvider
 ##
 ## Default credential is anonymous Device ID. Steam / console credential
 ## providers layer on later by handing a different external token to the gateway.
-## The canonical-account backend (Neon) maps the EOS PUID to a stable account id;
+## The canonical-account backend maps the EOS PUID to a stable account id;
 ## until that's wired, the PUID stands in as the account id.
 
 var _gateway
