@@ -102,7 +102,7 @@ commands in `doppler run`. Never put secrets in git or chat.
 scripts/check.sh           # headless import / parse gate
 scripts/test.sh            # full suite (offline; EOS + backend tests skip)
 scripts/dev.sh             # open the editor with secrets injected
-scripts/ci.sh              # what CI runs (boundary + import + tests)
+scripts/ci.sh              # release gate, no Doppler (boundary + import + tests)
 scripts/fetch-eos.sh       # install GD-EOS (online features)
 scripts/test-eos-live.sh   # live EOS device-id login (BEDROCK_EOS_LIVE=1)
 scripts/test-backend-live.sh  # live cloud-save round-trip (BEDROCK_BACKEND_LIVE=1)
