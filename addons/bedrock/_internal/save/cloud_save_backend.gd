@@ -4,7 +4,7 @@ extends Node
 ## the same contract).
 ##
 ## Disk is always the source of truth the game reads. When a backend URL and a
-## canonical session are configured, writes also sync to the cloud (Neon metadata
+## canonical session are configured, writes also sync to the cloud (D1 metadata
 ## + R2 blob) asynchronously; conflicts surface on CoreEvents.sync_conflict. With
 ## nothing configured it behaves exactly like the local disk backend, so single-
 ## player and offline play are unaffected.
@@ -133,7 +133,7 @@ func _conflict_policy() -> String:
 
 func _sync_up(slot: int, data: Dictionary) -> void:
 	# One request: metadata + the (small, base64) blob go to the backend, which
-	# stores the blob in Vercel Blob and the metadata in Neon.
+	# stores the blob in R2 and the metadata in D1.
 	CoreEvents.sync_started.emit(slot)
 	var serialized := var_to_str(data)  # checksum input only, never parsed
 	var payload := {

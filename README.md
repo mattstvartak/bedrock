@@ -210,8 +210,8 @@ Achievements.submit_leaderboard("high_score", 9000)
 
 ### Cloud save + cross-platform accounts
 
-Cloud save and cross-platform continuity run through a small backend (Vercel +
-Neon + Vercel Blob, in `backend/`). Deploy your own (see `backend/README.md`) and
+Cloud save and cross-platform continuity run through a small backend (a Cloudflare
+Worker with D1 and R2, in `backend/`). Deploy your own (see `backend/README.md`) and
 point the game at it with `BEDROCK_BACKEND_URL`. Once that's set and the player is
 signed in, `Save.write()` syncs to the cloud and `Save.pull()` brings it back,
 keyed to the player's canonical account so the save follows them across platforms.
