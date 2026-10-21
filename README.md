@@ -186,6 +186,16 @@ Net.invite_to_lobby(target_puid)
 Net.set_muted(true)
 ```
 
+```gdscript
+Net.send({"kind": "ready"}, 0)   # reliable; 0 = everyone, or a peer id
+CoreEvents.net_message.connect(func(from_peer, data): print(from_peer, data))
+Net.online_available()           # true only if EOS is installed, configured and has an identity backend
+```
+
+`send` takes plain Variants only (objects are dropped on receive) and returns
+false with no session. A join that can't connect emits `CoreEvents.join_failed(reason)`;
+a client losing its host emits `CoreEvents.host_left()`.
+
 Peer changes arrive on `CoreEvents.peer_joined / peer_left`; lobby changes on
 `CoreEvents.lobby_updated`. Netcode prediction (rollback or snapshot) is yours to
 add on top; Bedrock provides the transport, lobbies, and voice.

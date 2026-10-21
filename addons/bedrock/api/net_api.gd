@@ -4,7 +4,9 @@ extends Node
 ## ENet for local/LAN play, EOS P2P for online, behind the net backend. The
 ## authority model (P2P host-authoritative or dedicated) is the game's choice;
 ## netcode prediction (rollback or snapshot) stays in the game, not here. Peer
-## connect/disconnect arrives on CoreEvents.peer_joined / peer_left.
+## connect/disconnect arrives on CoreEvents.peer_joined / peer_left. Messages
+## from send() arrive on CoreEvents.net_message; a join that can't connect emits
+## CoreEvents.join_failed, and a client losing its host emits CoreEvents.host_left.
 
 var _backend
 
@@ -69,6 +71,21 @@ func set_muted(muted: bool) -> bool:
 func set_player_volume(participant_id, volume: float) -> bool:
 	var b = _resolve()
 	return b.set_player_volume(participant_id, volume) if b else false
+
+
+## Send any plain Variant reliably to one peer, or to everyone with to_peer = 0.
+## Works over LAN and EOS. Returns false when no session is active. Receivers get
+## CoreEvents.net_message(from_peer, data). Objects are not sent or accepted.
+func send(data: Variant, to_peer: int = 0) -> bool:
+	var b = _resolve()
+	return b.send(data, to_peer) if b else false
+
+
+## True only when online play can work: the GD-EOS addon is present, an identity
+## backend is bound and the EOS product settings are set.
+func online_available() -> bool:
+	var b = _resolve()
+	return b.online_available() if b else false
 
 
 func is_host() -> bool:

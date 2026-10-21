@@ -4,6 +4,12 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## Unreleased
+
+- `Net.send(data, to_peer)` and `CoreEvents.net_message`: reliable messages over LAN or EOS.
+- `CoreEvents.join_failed(reason)` and `CoreEvents.host_left()`.
+- `Net.online_available()`.
+
 ## [0.2.0] - 2026-10-08
 
 A review before the Witch Game builds on Bedrock found save and settings files
