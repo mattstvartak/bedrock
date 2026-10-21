@@ -4,6 +4,11 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## Unreleased
+
+### Fixed
+- `Controls.rebind` no longer wipes every key on an action. It swaps one binding (`replacing`, or the first of the same kind) and keeps the rest.
+
 ## [0.2.0] - 2026-10-08
 
 A review before the Witch Game builds on Bedrock found save and settings files

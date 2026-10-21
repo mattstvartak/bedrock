@@ -86,6 +86,40 @@ func _ready() -> void:
 	_check(Controls.events_for("test_kinds").has(kb) and Controls.events_for("test_kinds").has(mb2), "key and mouse rebinds are separate")
 	_check(Controls.events_for("test_kinds").has(pb2) and Controls.events_for("test_kinds").has(st2), "pad button and stick rebinds are separate")
 
+	# Two keys on one action: rebinding one keeps the other, and both survive a save + load.
+	InputMap.add_action("test_move")
+	var kw := InputEventKey.new()
+	kw.physical_keycode = KEY_W
+	var kup := InputEventKey.new()
+	kup.physical_keycode = KEY_UP
+	InputMap.action_add_event("test_move", kw)
+	InputMap.action_add_event("test_move", kup)
+	var ki := InputEventKey.new()
+	ki.physical_keycode = KEY_I
+	Controls.rebind("test_move", ki)
+	var mv := Controls.events_for("test_move")
+	_check(mv.size() == 2 and mv.has(ki) and mv.has(kup) and not mv.has(kw), "rebind swapped the first key and kept the second")
+	var kj := InputEventKey.new()
+	kj.physical_keycode = KEY_J
+	var kup2 := InputEventKey.new()
+	kup2.physical_keycode = KEY_UP
+	Controls.rebind("test_move", kj, kup2)
+	mv = Controls.events_for("test_move")
+	_check(mv.size() == 2 and mv.has(ki) and mv.has(kj) and not mv.has(kup), "replacing swapped the named key only")
+	var ki2 := InputEventKey.new()
+	ki2.physical_keycode = KEY_I
+	Controls.rebind("test_move", ki2, kj)
+	_check(Controls.events_for("test_move").size() == 1, "no duplicate when the new key is already bound")
+	InputMap.action_add_event("test_move", kj)
+	Controls.save_bindings()
+	InputMap.action_erase_events("test_move")
+	Controls.load_bindings()
+	var codes: Array[int] = []
+	for e in Controls.events_for("test_move"):
+		codes.append((e as InputEventKey).physical_keycode)
+	codes.sort()
+	_check(codes == [KEY_I, KEY_J], "two same-kind keys round trip through save and load")
+
 	# --- Locale ---
 	var before := Locale.get_locale()
 	Locale.set_locale("es")

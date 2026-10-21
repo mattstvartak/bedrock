@@ -16,15 +16,26 @@ func _ready() -> void:
 	load_bindings()
 
 
-## Replace the action's events of the same kind (key, mouse button, pad button or
-## stick) with `event`, keeping the other kinds so a player keeps all their bindings.
-func rebind(action: StringName, event: InputEvent) -> void:
+## Change one binding on the action and keep the rest. With `replacing`, that exact
+## event (matched by is_match or the same key/button) is swapped for `event`. Without
+## it, the first existing event of the same kind (key, mouse button, pad button or
+## stick) is replaced. An `event` already on the action is not added twice.
+func rebind(action: StringName, event: InputEvent, replacing: InputEvent = null) -> void:
 	if not InputMap.has_action(action):
 		return
-	for e in InputMap.action_get_events(action):
-		if e.get_class() == event.get_class():
-			InputMap.action_erase_event(action, e)
-	InputMap.action_add_event(action, event)
+	var existing := InputMap.action_get_events(action)
+	var target: InputEvent = null
+	for e in existing:
+		if replacing != null and _same_binding(e, replacing):
+			target = e
+			break
+		if replacing == null and e.get_class() == event.get_class():
+			target = e
+			break
+	if target != null:
+		InputMap.action_erase_event(action, target)
+	if not _has_binding(action, event):
+		InputMap.action_add_event(action, event)
 	rebound.emit(action, event)
 	save_bindings()
 
@@ -156,3 +167,28 @@ func _pad_glyph(btn: int, family: Family) -> String:
 			return {0: "nx_b", 1: "nx_a", 2: "nx_y", 3: "nx_x"}.get(btn, "nx_btn_%d" % btn)
 		_:
 			return {0: "xbox_a", 1: "xbox_b", 2: "xbox_x", 3: "xbox_y"}.get(btn, "xbox_btn_%d" % btn)
+
+
+func _has_binding(action: StringName, event: InputEvent) -> bool:
+	for e in InputMap.action_get_events(action):
+		if _same_binding(e, event):
+			return true
+	return false
+
+
+func _same_binding(a: InputEvent, b: InputEvent) -> bool:
+	if a.get_class() != b.get_class():
+		return false
+	if a is InputEventKey:
+		var ka := a as InputEventKey
+		var kb := b as InputEventKey
+		return ka.physical_keycode == kb.physical_keycode and ka.keycode == kb.keycode
+	if a is InputEventJoypadButton:
+		return (a as InputEventJoypadButton).button_index == (b as InputEventJoypadButton).button_index
+	if a is InputEventMouseButton:
+		return (a as InputEventMouseButton).button_index == (b as InputEventMouseButton).button_index
+	if a is InputEventJoypadMotion:
+		var ma := a as InputEventJoypadMotion
+		var mb := b as InputEventJoypadMotion
+		return ma.axis == mb.axis and signf(ma.axis_value) == signf(mb.axis_value)
+	return a.is_match(b)
