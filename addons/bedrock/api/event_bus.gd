@@ -26,3 +26,6 @@ signal lobby_left()
 signal peer_joined(peer_id)             ## int
 signal peer_left(peer_id)               ## int
 signal net_error(reason)                ## String
+signal net_message(from_peer, data)     ## int, Variant: sent with Net.send()
+signal join_failed(reason)              ## String: a join could not connect
+signal host_left()                      ## the host went away (clients only)

@@ -6,6 +6,11 @@ internals under `_internal/` can change in any patch.
 
 ## Unreleased
 
+### Added
+- `Net.send(data, to_peer)` and `CoreEvents.net_message`: reliable messages over LAN or EOS.
+- `CoreEvents.join_failed(reason)` and `CoreEvents.host_left()`.
+- `Net.online_available()`.
+
 ### Fixed
 - `Controls.rebind` no longer wipes every key on an action. It swaps one binding (`replacing`, or the first of the same kind) and keeps the rest.
 

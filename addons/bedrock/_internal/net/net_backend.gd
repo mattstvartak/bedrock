@@ -22,6 +22,9 @@ var _active := false  # a real session is up (Godot keeps an offline peer otherw
 func _ready() -> void:
 	multiplayer.peer_connected.connect(func(id): CoreEvents.peer_joined.emit(id))
 	multiplayer.peer_disconnected.connect(func(id): CoreEvents.peer_left.emit(id))
+	multiplayer.connection_failed.connect(_on_connection_failed)
+	multiplayer.server_disconnected.connect(_on_server_disconnected)
+	multiplayer.peer_packet.connect(_on_peer_packet)
 
 
 # --- Local (ENet) ---
@@ -126,6 +129,37 @@ func leave() -> void:
 		multiplayer.multiplayer_peer = null
 	_is_host = false
 	_active = false
+
+
+func send(data: Variant, to_peer: int = 0) -> bool:
+	if not _active or multiplayer.multiplayer_peer == null:
+		return false
+	var err: Error = multiplayer.send_bytes(var_to_bytes(data), to_peer, MultiplayerPeer.TRANSFER_MODE_RELIABLE)
+	return err == OK
+
+
+func online_available() -> bool:
+	return ClassDB.class_exists("EOSMultiplayerPeer") \
+			and Platform.has_backend(Platform.IDENTITY) \
+			and OS.get_environment("EOS_PRODUCT_ID") != ""
+
+
+func _on_peer_packet(from_peer: int, packet: PackedByteArray) -> void:
+	# Trust boundary: plain bytes_to_var only, never the object-allowing decode.
+	var data = bytes_to_var(packet)
+	if data == null and packet != var_to_bytes(null):
+		return  # didn't decode
+	CoreEvents.net_message.emit(from_peer, data)
+
+
+func _on_connection_failed() -> void:
+	leave.call_deferred()
+	CoreEvents.join_failed.emit("Couldn't reach the host. Check the address and that the host is running.")
+
+
+func _on_server_disconnected() -> void:
+	leave.call_deferred()
+	CoreEvents.host_left.emit()
 
 
 func is_host() -> bool:
