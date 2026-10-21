@@ -4,7 +4,11 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
-## Unreleased
+## [0.3.0] - 2026-10-21
+
+Nomad Game Studio's co-op needed games to send their own data between players
+and to tell a failed join from a host that quit. Rebinding one key also stopped
+wiping the action's other keys.
 
 ### Added
 - `Net.send(data, to_peer)` and `CoreEvents.net_message`: reliable messages over LAN or EOS.
@@ -13,6 +17,9 @@ internals under `_internal/` can change in any patch.
 
 ### Fixed
 - `Controls.rebind` no longer wipes every key on an action. It swaps one binding (`replacing`, or the first of the same kind) and keeps the rest.
+
+### Removed
+- The GitHub Actions workflow. Run `scripts/ci.sh` locally before a release.
 
 ## [0.2.0] - 2026-10-08
 
