@@ -92,5 +92,5 @@ func _on_login(callback_info) -> void:
 	var ok := int(callback_info.result_code) == 0  # EOS_Success
 	var puid := ""
 	if ok and callback_info.local_user_id != null:
-		puid = str(callback_info.local_user_id)
+		puid = callback_info.local_user_id.to_string()
 	login_completed.emit(ok, puid)
