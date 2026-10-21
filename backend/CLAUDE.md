@@ -2,39 +2,30 @@
 
 The canonical-account + cross-platform-save service. SSO-only: a player signs in
 with a platform token (Steam/console/Device ID), the backend mints-or-fetches one
-canonical account and returns a session JWT. Saves are metadata in Neon with
-blobs in a private Vercel Blob store, keyed by canonical account id.
+canonical account and returns a session JWT. Saves are metadata in D1 with
+blobs in a private R2 bucket, keyed by canonical account id.
 
-Vercel functions (`api/*.ts`) over Neon Postgres + Vercel Blob. Deployed live at
-**https://bedrock-backend-onenomad.vercel.app** (Vercel project
-`onenomad/bedrock-backend`).
+One Cloudflare Worker (`src/index.ts`) over D1 and a private R2 bucket
+(`bedrock-backend`, envs `dev` and `production` in `wrangler.jsonc`).
 
-## Gotchas (these cost real time — heed them)
+## Gotchas
 
-- **ESM, not CJS.** Vercel runs the functions as ES modules. That means
-  `package.json` has `"type": "module"`, `tsconfig` is `module`/
-  `moduleResolution: "NodeNext"`, and **every relative import needs a `.js`
-  extension** (`import { sql } from "../lib/db.js"`). Without all three you get
-  `FUNCTION_INVOCATION_FAILED` at module load. The error only shows in runtime
-  logs (`vercel logs <deployment-url>`), not the build.
-- **The blob store is private.** `put(...)` must use `access: "private"`
-  (public errors). To download, the function fetches the blob URL server-side
-  with `Authorization: Bearer ${BLOB_READ_WRITE_TOKEN}` and returns the bytes —
-  the client never hits the blob URL directly.
-- **No psql here.** Apply `sql/0001_init.sql` with a tiny Node migrator using
-  `@neondatabase/serverless`. Its `neon()` HTTP client is template-only (no
-  `.query`); run a raw statement with `sql(Object.assign([stmt], { raw: [stmt] }))`.
-- **Deployment protection** (Vercel Authentication / `ssoProtection`) must be OFF
-  for this project or every request 302-redirects to an SSO page. A public game
-  API can't pass Vercel SSO; our own JWT is the auth.
+- **The bucket is private.** `GET /api/save` reads the object through the
+  Worker binding and returns the bytes as `blob_base64`; the client never hits
+  R2 directly. `blob_url` is just the object key (`<account>/slot_<n>.save`).
+- **Secrets are not in `worker-configuration.d.ts`.** `JWT_SIGNING_KEY` and
+  `STEAM_WEB_API_KEY` are typed by hand in `src/secrets.d.ts`. Rerun
+  `npm run types` after changing `wrangler.jsonc`.
+- **JWT is HS256 via Web Crypto** (`src/jwt.ts`), no library. Sessions last 30 days.
+- **Tests apply `migrations/0001_init.sql`** themselves (`test/api.test.ts`); D1
+  state is per test file.
 
 ## Env
 
-Managed in Doppler (`bedrock`) and on the Vercel project. Required:
-`DATABASE_URL` (Neon, connected via the Vercel integration), `JWT_SIGNING_KEY`,
-`BLOB_READ_WRITE_TOKEN` (from the connected Blob store). Optional: `STEAM_*`.
-Push a value from Doppler to Vercel without printing it:
-`doppler secrets get KEY --plain --config prd | vercel env add KEY production`.
+Doppler project `bedrock` is the source. Set on the Worker with
+`doppler secrets get KEY --plain --config prd | npx wrangler secret put KEY --env production`
+(never echo the value). Required: `JWT_SIGNING_KEY`. Optional: `STEAM_WEB_API_KEY`
+(`STEAM_APP_ID` is a var in `wrangler.jsonc`).
 
 ## Endpoints
 
@@ -47,9 +38,11 @@ Push a value from Doppler to Vercel without printing it:
 
 ## Deploy / verify
 
-`npm install && npm run typecheck`, then `vercel deploy --prod --yes`. Verify
-live with `scripts/test-backend-live.sh` from the repo root (the game-side
-round-trip) or curl `/api/auth` with a device token.
+`npm install && npm run typecheck && npm test`, apply migrations with
+`npx wrangler d1 migrations apply DB --env production --remote`, then
+`npx wrangler deploy --env production`. Verify live with
+`scripts/test-backend-live.sh` from the repo root or curl `/api/auth` with a
+device token.
 
 ## Game side
 

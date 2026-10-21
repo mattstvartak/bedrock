@@ -1,13 +1,13 @@
 {
-  "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
-    "strict": true,
-    "skipLibCheck": true,
-    "types": ["node"],
-    "noEmit": true
-  },
-  "include": ["api", "lib"]
+	"compilerOptions": {
+		"target": "es2024",
+		"module": "es2022",
+		"moduleResolution": "bundler",
+		"lib": ["es2024"],
+		"types": ["@cloudflare/vitest-plugin/types"],
+		"strict": true,
+		"noEmit": true,
+		"skipLibCheck": true
+	},
+	"include": ["worker-configuration.d.ts", "src", "test"]
 }

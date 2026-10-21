@@ -1,0 +1,3 @@
+# copy to .dev.vars; in production use `wrangler secret put <NAME>`
+JWT_SIGNING_KEY=dev-only-signing-key
+STEAM_WEB_API_KEY=dev-only-steam-key

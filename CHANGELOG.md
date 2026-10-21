@@ -4,6 +4,10 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## Unreleased
+
+- Backend moved from Vercel, Neon and Vercel Blob to a Cloudflare Worker with D1 and R2. Same endpoints and shapes; `blob_url` is now an R2 object key.
+
 ## [0.3.0] - 2026-10-21
 
 Nomad Game Studio's co-op needed games to send their own data between players

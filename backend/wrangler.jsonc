@@ -1,0 +1,22 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "bedrock-backend",
+	"main": "src/index.ts",
+	"compatibility_date": "2026-10-01",
+	"compatibility_flags": ["nodejs_compat"],
+	"vars": { "STEAM_APP_ID": "0" },
+	"d1_databases": [{ "binding": "DB", "database_name": "bedrock-dev", "database_id": "TODO-dev-d1-id", "migrations_dir": "migrations" }],
+	"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-dev" }],
+	"env": {
+		"dev": {
+			"vars": { "STEAM_APP_ID": "0" },
+			"d1_databases": [{ "binding": "DB", "database_name": "bedrock-dev", "database_id": "TODO-dev-d1-id", "migrations_dir": "migrations" }],
+			"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-dev" }]
+		},
+		"production": {
+			"vars": { "STEAM_APP_ID": "0" },
+			"d1_databases": [{ "binding": "DB", "database_name": "bedrock-prod", "database_id": "TODO-prod-d1-id", "migrations_dir": "migrations" }],
+			"r2_buckets": [{ "binding": "SAVES", "bucket_name": "bedrock-saves-prod" }]
+		}
+	}
+}

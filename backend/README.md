@@ -3,38 +3,34 @@
 The canonical-account + cross-platform-save service for Bedrock. SSO-only (no
 passwords): a player signs in with the platform token they already have
 (Steam/console/Device ID), the backend mints-or-fetches their one canonical
-account and returns a session JWT. Saves are metadata in Neon with blobs in
-Vercel Blob, keyed by canonical account id, so a save follows the player across
+account and returns a session JWT. Save metadata lives in D1, blobs in a private
+R2 bucket, keyed by canonical account id, so a save follows the player across
 platforms.
 
-Runs as Vercel functions over Neon Postgres + Vercel Blob. The game never talks
-to Neon/Blob directly, only to these endpoints.
+One Cloudflare Worker (`bedrock-backend`) over D1 and R2. The game never talks to
+D1 or R2 directly, only to these endpoints.
 
 ## Endpoints
 
 - `POST /api/auth` `{ platform, token }` -> `{ session, account_id }`
-- `GET  /api/save?slot=N` -> `{ exists, schema_version, checksum, updated_unix, blob_url }`
+- `GET  /api/save?slot=N` -> `{ exists, schema_version, checksum, updated_unix, blob_url, blob_base64 }`
 - `PUT  /api/save?slot=N` `{ schema_version, checksum, updated_unix, blob_base64 }` -> `{ ok, blob_url }`
 - `POST /api/link` `{ action: "issue" }` -> `{ code }`
 - `POST /api/link` `{ action: "redeem", code }` -> `{ account_id, session }` (merges accounts)
 
-`/api/save` and `/api/link` require `Authorization: Bearer <session>`.
+`/api/save` and `/api/link` require `Authorization: Bearer <session>`. `blob_url`
+is the R2 object key, informational only; the game reads `blob_base64`.
 
 ## Deploy
 
-1. **Neon**: create a project, run `sql/0001_init.sql`, copy the connection string
-   into Doppler as `DATABASE_URL`. (Neon Auth is not needed.)
-2. **Vercel Blob**: connect a Blob store to this project (`vercel blob store add`
-   or Storage in the dashboard). Vercel auto-injects `BLOB_READ_WRITE_TOKEN`.
-3. **Doppler**: put `DATABASE_URL`, `JWT_SIGNING_KEY` (and `STEAM_*` if using Steam
-   login) in the `bedrock` project (see `.env.example`); sync to Vercel.
-4. **Vercel**: `vercel deploy --prod`. Then point the game's `BEDROCK_BACKEND_URL`
-   at the deployment.
+1. Create the D1 database and R2 bucket for each env, and put the real ids in
+   `wrangler.jsonc` (the `TODO` placeholders).
+2. Apply the schema: `npx wrangler d1 migrations apply DB --env production --remote`.
+3. Secrets, from Doppler without printing them:
+   `doppler secrets get JWT_SIGNING_KEY --plain --config prd | npx wrangler secret put JWT_SIGNING_KEY --env production`
+   and the same for `STEAM_WEB_API_KEY` if using Steam login. `STEAM_APP_ID` is a var in `wrangler.jsonc`.
+4. `npx wrangler deploy --env production`, then point the game's `BEDROCK_BACKEND_URL`
+   at the worker URL.
 
-Local: `npm install && npm run typecheck`, then `doppler run -- vercel dev`.
-
-## Status
-
-Code complete, typechecks clean. Deploy needs a Neon project and a Vercel Blob
-store on this project. Pairs with the game-side `CloudSaveBackend` (local-first
-disk, async one-request sync through these endpoints).
+Local: `npm install`, copy `.dev.vars.example` to `.dev.vars`, `npm run dev`.
+Checks: `npm run typecheck && npm test`.
