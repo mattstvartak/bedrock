@@ -1,3 +1,8 @@
 # copy to .dev.vars; in production use `wrangler secret put <NAME>`
 JWT_SIGNING_KEY=dev-only-signing-key
 STEAM_WEB_API_KEY=dev-only-steam-key
+# the EOS client id and deployment id the game logs in with (not secret, but kept out of git)
+EOS_CLIENT_ID=
+EOS_DEPLOYMENT_ID=
+# lets `{ platform: "device", token: <anything> }` sign in. Never set this on a deployed Worker.
+ALLOW_UNVERIFIED_DEVICE_TOKENS=1
