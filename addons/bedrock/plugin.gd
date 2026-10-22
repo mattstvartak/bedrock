@@ -32,4 +32,5 @@ func _exit_tree() -> void:
 	var names := AUTOLOADS.keys()
 	names.reverse()
 	for singleton in names:
-		remove_autoload_singleton(singleton)
+		if ProjectSettings.get_setting("autoload/" + singleton, "") == "*" + AUTOLOADS[singleton]:
+			remove_autoload_singleton(singleton)

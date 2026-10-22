@@ -215,6 +215,18 @@ Worker with D1 and R2, in `backend/`). Deploy your own (see `backend/README.md`)
 point the game at it with `BEDROCK_BACKEND_URL`. Once that's set and the player is
 signed in, `Save.write()` syncs to the cloud and `Save.pull()` brings it back,
 keyed to the player's canonical account so the save follows them across platforms.
+The game signs in to the backend with the player's EOS id token, which the backend
+verifies with Epic, so nobody can claim another player's saves.
+
+To merge two devices into one account, the device that keeps its saves issues a
+code and the other redeems it:
+
+```gdscript
+var code := await Identity.begin_link_code()   # show this to the player, good for 10 min
+var ok := await Identity.redeem_link_code(code) # on the other device; its saves are dropped
+```
+
+Both return "" / false when no backend is configured or the player isn't signed in.
 
 ---
 

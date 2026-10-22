@@ -4,6 +4,41 @@ All notable changes to Bedrock are recorded here. The public API in
 `addons/bedrock/api/` follows semver: breaking changes to it are a major bump;
 internals under `_internal/` can change in any patch.
 
+## [Unreleased]
+
+A review of the live cloud backend found it took the client's word for who it was.
+
+### Security
+- **The backend verifies who is signing in.** `POST /api/auth` used to accept any
+  string as a device or Epic id, so anyone who knew (or guessed) a PUID could mint a
+  session for that account, and PUIDs are visible to every lobby member. The game now
+  sends the player's EOS Connect id token and the Worker checks its signature against
+  Epic's JWKS, the issuer, the audience and the deployment before keying the account
+  by PUID. Bare `device` tokens only work with `ALLOW_UNVERIFIED_DEVICE_TOKENS=1`,
+  for local dev and tests. **Deploy note:** set `EOS_CLIENT_ID` and `EOS_DEPLOYMENT_ID`
+  on the Worker; accounts created under the old `device` platform are not reachable
+  from the new `eos` one.
+- Slots are capped at 0..99 and blobs at 1 MiB, so one account can't fill the bucket.
+- A merged-away account's old sessions are refused instead of writing orphan rows.
+
+### Fixed
+- `Save.pull()` compares checksums before timestamps. Writing a pulled copy to disk
+  stamped it with local time, so every later pull under `keep_highest_progress`
+  raised a conflict for identical data.
+- Cloud sync uses one HTTPRequest per call. A shared one refused the second of two
+  quick writes, or a pull during an upload.
+- The EOS platform reports the plugin's real version instead of 0.1.0.
+- Disabling the plugin only removes the autoloads that point at Bedrock, not ones
+  the game declared itself under the same name.
+
+### Added
+- `Identity.begin_link_code()` and `Identity.redeem_link_code(code)` are wired to the
+  backend's `/api/link`. Both are coroutines: `await` them.
+
+### Changed
+- `IIdentityProvider` gains `platform_token()` and loses the link-code stubs; link
+  codes live on the backend session, not the identity provider.
+
 ## [0.3.1] - 2026-10-21
 
 The first live EOS crossplay check found the player id was never Epic's, and
