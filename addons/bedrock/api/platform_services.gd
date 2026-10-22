@@ -16,6 +16,7 @@ const ACHIEVEMENTS := &"achievements"
 const STORE := &"store"
 const VOICE := &"voice"
 const SOCIAL := &"social"
+const ACCOUNT := &"account"  ## canonical-account backend session (cloud save, link codes)
 
 const _CloudSaveBackend := preload("res://addons/bedrock/_internal/save/cloud_save_backend.gd")
 const _NetBackend := preload("res://addons/bedrock/_internal/net/net_backend.gd")
@@ -70,7 +71,9 @@ func _bootstrap() -> void:
 		bind(SAVE, save_backend)
 		# When a backend is configured, bridge login -> session -> cloud sync.
 		if OS.get_environment("BEDROCK_BACKEND_URL") != "":
-			add_child(load(_BACKEND_SESSION_PATH).new())
+			var account: Node = load(_BACKEND_SESSION_PATH).new()
+			add_child(account)
+			bind(ACCOUNT, account)
 
 	# Networking: ENet local always, EOS online when the addon is present. The
 	# backend is a child node so it can hook the multiplayer peer signals.

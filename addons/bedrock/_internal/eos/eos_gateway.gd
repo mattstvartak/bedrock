@@ -33,7 +33,7 @@ func init_from_env() -> bool:
 
 	var init_opts := EOSInitializeOptions.new()
 	init_opts.product_name = "Bedrock"
-	init_opts.product_version = "0.1.0"
+	init_opts.product_version = _plugin_version()
 	EOS.initialize(init_opts)  # AlreadyConfigured on re-init is harmless
 
 	var creds := EOSPlatform_ClientCredentials.new()
@@ -73,6 +73,23 @@ func login_steam(ticket: String, display_name := "Player") -> void:
 		login_completed.emit(false, "")
 		return
 	_login_external(EOS.ExternalCredentialType.ECT_STEAM_SESSION_TICKET, ticket, display_name)
+
+
+## The logged-in user's EOS Connect id token (an RS256 JWT Epic signs, good for an
+## hour), or "" when nobody is logged in. The backend verifies it against Epic's
+## JWKS, so a player can only ever claim their own account.
+func id_token() -> String:
+	if not _initialized or EOSConnect.get_logged_in_users_count() == 0:
+		return ""
+	var token = EOSConnect.copy_id_token(EOSConnect.get_logged_in_user_by_index(0))
+	return str(token.json_web_token) if token != null else ""
+
+
+func _plugin_version() -> String:
+	var cfg := ConfigFile.new()
+	if cfg.load("res://addons/bedrock/plugin.cfg") != OK:
+		return "0.0.0"
+	return str(cfg.get_value("plugin", "version", "0.0.0"))
 
 
 func _do_login(display_name: String) -> void:

@@ -1,15 +1,17 @@
+import { verifyEosIdToken } from "./eos";
 import { verifySession } from "./jwt";
 
 // Validate a platform token and return a stable platform id, or null.
 export async function validatePlatformToken(env: Env, platform: string, token: string): Promise<string | null> {
 	switch (platform) {
+		case "eos":
+			return verifyEosIdToken(env, token);
 		case "steam":
 			return validateSteam(env, token);
 		case "device":
-		case "epic":
-			// Device ID / EOS PUID. For the MVP the client sends its own id; harden
-			// by verifying the EOS id token server-side before trusting it in prod.
-			return token || null;
+			// The client's own id, unverified. Local dev and tests only; the flag is
+			// never set on a deployed Worker.
+			return env.ALLOW_UNVERIFIED_DEVICE_TOKENS === "1" ? token || null : null;
 		default:
 			// psn / xbox / switch: validate against the platform's token service.
 			return null;
@@ -26,10 +28,14 @@ async function validateSteam(env: Env, ticket: string): Promise<string | null> {
 	return params?.result === "OK" ? (params.steamid ?? null) : null;
 }
 
-// Resolve the account id from an Authorization: Bearer <session> header.
+// Resolve the account id from an Authorization: Bearer <session> header. A merged
+// account is deleted, so its old sessions stop working here.
 export async function accountFromRequest(env: Env, req: Request): Promise<string | null> {
 	const token = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-	return token ? verifySession(env.JWT_SIGNING_KEY, token) : null;
+	const id = token ? await verifySession(env.JWT_SIGNING_KEY, token) : null;
+	if (!id) return null;
+	const row = await env.DB.prepare("select 1 as ok from accounts where id=?").bind(id).first();
+	return row ? id : null;
 }
 
 // Mint-or-fetch the canonical account for a platform identity.

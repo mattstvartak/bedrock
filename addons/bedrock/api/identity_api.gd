@@ -41,20 +41,26 @@ func logout() -> void:
 		p.logout()
 
 
-## Opt-in cross-platform: start a link on this device, returns a short code the
-## player enters on the other platform to merge accounts.
+## Opt-in cross-platform merge. On the device that keeps its saves, `await` a
+## code (good for ten minutes) and show it to the player. On the other device,
+## `await redeem_link_code(code)`: that device's platform identity moves onto the
+## first account and its own cloud saves are dropped. Both return "" / false when
+## no backend is configured or the player is not signed in to it.
 func begin_link_code() -> String:
-	var p = _resolve()
-	return p.begin_link_code() if p else ""
+	var a = _account()
+	return await a.begin_link_code() if a else ""
 
 
-func redeem_link_code(code: String) -> void:
-	var p = _resolve()
-	if p:
-		p.redeem_link_code(code)
+func redeem_link_code(code: String) -> bool:
+	var a = _account()
+	return await a.redeem_link_code(code) if a else false
 
 
 func _resolve():
 	if _provider == null and Platform.has_backend(Platform.IDENTITY):
 		_provider = Platform.get_backend(Platform.IDENTITY)
 	return _provider
+
+
+func _account():
+	return Platform.get_backend(Platform.ACCOUNT)

@@ -3,6 +3,9 @@ import { mintSession } from "./jwt";
 
 const json = (body: unknown, status = 200) => Response.json(body, { status });
 const keyFor = (accountId: string, slot: number) => `${accountId}/slot_${slot}.save`;
+// Caps keep one account from filling the bucket: 100 slots, 1 MiB per blob.
+const MAX_SLOT = 99;
+const MAX_BLOB_BASE64 = Math.ceil((1024 * 1024) / 3) * 4;
 
 const toBase64 = (b: ArrayBuffer) => {
 	let s = "";
@@ -28,7 +31,7 @@ async function auth(req: Request, env: Env) {
 //   PUT  /api/save?slot=0  { schema_version, checksum, updated_unix, blob_base64 } -> { ok, blob_url }
 async function save(req: Request, env: Env, accountId: string, url: URL) {
 	const slot = parseInt(url.searchParams.get("slot") ?? "0", 10);
-	if (!Number.isInteger(slot)) return json({ error: "bad slot" }, 400);
+	if (!Number.isInteger(slot) || slot < 0 || slot > MAX_SLOT) return json({ error: "bad slot" }, 400);
 
 	if (req.method === "GET") {
 		const meta = await env.DB.prepare(
@@ -40,12 +43,14 @@ async function save(req: Request, env: Env, accountId: string, url: URL) {
 	}
 
 	if (req.method === "PUT") {
-		const { schema_version = 1, checksum = "", updated_unix = 0, blob_base64 = "" } = ((await req.json().catch(() => null)) ?? {}) as {
+		const { schema_version = 1, checksum = "", updated_unix = 0, blob_base64 } = ((await req.json().catch(() => null)) ?? {}) as {
 			schema_version?: number;
 			checksum?: string;
 			updated_unix?: number;
-			blob_base64?: string;
+			blob_base64?: unknown;
 		};
+		if (typeof blob_base64 !== "string" || !blob_base64) return json({ error: "blob_base64 required" }, 400);
+		if (blob_base64.length > MAX_BLOB_BASE64) return json({ error: "save too large" }, 413);
 		let bytes: Uint8Array;
 		try {
 			bytes = fromBase64(blob_base64);
@@ -96,10 +101,10 @@ async function link(req: Request, env: Env, accountId: string) {
 				env.DB.prepare("update platform_links set account_id=? where account_id=?").bind(target, accountId),
 				env.DB.prepare("delete from save_objects where account_id=?").bind(accountId),
 				env.DB.prepare("delete from accounts where id=?").bind(accountId),
-				env.DB.prepare("delete from link_codes where code=?").bind(code),
 			]);
 			await env.SAVES.delete(mine.results.map((r) => r.blob_key));
 		}
+		await env.DB.prepare("delete from link_codes where code=?").bind(code).run();
 		return json({ account_id: target, session: await mintSession(env.JWT_SIGNING_KEY, target) });
 	}
 

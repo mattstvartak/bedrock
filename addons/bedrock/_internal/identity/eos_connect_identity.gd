@@ -40,6 +40,13 @@ func login_steam(ticket: String) -> void:
 	_gateway.login_steam(ticket)
 
 
+func platform_token() -> Dictionary:
+	if not _logged_in or _gateway == null:
+		return {}
+	var token: String = _gateway.id_token()
+	return {"platform": "eos", "token": token} if token != "" else {}
+
+
 func logout() -> void:
 	_logged_in = false
 	_account = null

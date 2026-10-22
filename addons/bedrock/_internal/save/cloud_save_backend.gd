@@ -16,7 +16,6 @@ const _LocalSaveBackend := preload("res://addons/bedrock/_internal/save/local_sa
 const SaveCodec := preload("res://addons/bedrock/_internal/save/save_codec.gd")
 
 var _local
-var _http: HTTPRequest
 var _base_url := ""
 var _session := ""
 
@@ -24,11 +23,6 @@ var _session := ""
 func _init() -> void:
 	_local = _LocalSaveBackend.new()
 	_base_url = OS.get_environment("BEDROCK_BACKEND_URL")
-
-
-func _ready() -> void:
-	_http = HTTPRequest.new()
-	add_child(_http)
 
 
 # --- ISaveBackend contract (delegates to local, then syncs) ---
@@ -80,11 +74,10 @@ func pull(slot: int) -> void:
 	if not cloud_enabled():
 		return
 	CoreEvents.sync_started.emit(slot)
-	var headers := PackedStringArray(["Authorization: Bearer " + _session])
-	if _http.request("%s/api/save?slot=%d" % [_base_url, slot], headers, HTTPClient.METHOD_GET) != OK:
+	var result := await _request(slot, HTTPClient.METHOD_GET)
+	if result.is_empty():
 		CoreEvents.sync_failed.emit(slot, "pull request failed")
 		return
-	var result = await _http.request_completed
 	if int(result[1]) != 200:
 		CoreEvents.sync_failed.emit(slot, "pull got HTTP %d" % result[1])
 		return
@@ -100,7 +93,12 @@ func pull(slot: int) -> void:
 		return
 	var local = _local.meta(slot)
 
-	if not local.get("exists", false) or cloud_unix > int(local.get("updated_unix", 0)):
+	# Same content is in sync whatever the clocks say. Writing a pulled copy to
+	# disk stamps it with local time, so timestamps alone would call every later
+	# pull a conflict.
+	if local.get("exists", false) and local.get("checksum", "") == str(data.get("checksum", "")):
+		CoreEvents.sync_completed.emit(slot)
+	elif not local.get("exists", false) or cloud_unix > int(local.get("updated_unix", 0)):
 		# cloud wins (or no local yet)
 		if _local.write_checked(slot, cloud_blob):
 			CoreEvents.sync_completed.emit(slot)
@@ -142,19 +140,28 @@ func _sync_up(slot: int, data: Dictionary) -> void:
 		"updated_unix": int(Time.get_unix_time_from_system()),
 		"blob_base64": Marshalls.raw_to_base64(SaveCodec.encode(data)),
 	}
-	var headers := PackedStringArray([
-		"Authorization: Bearer " + _session,
-		"Content-Type: application/json",
-	])
-	var err := _http.request(
-		"%s/api/save?slot=%d" % [_base_url, slot],
-		headers, HTTPClient.METHOD_PUT, JSON.stringify(payload)
-	)
-	if err != OK:
-		CoreEvents.sync_failed.emit(slot, "request failed (%d)" % err)
+	var result := await _request(slot, HTTPClient.METHOD_PUT, JSON.stringify(payload))
+	if result.is_empty():
+		CoreEvents.sync_failed.emit(slot, "request failed")
 		return
-	var result = await _http.request_completed
 	if int(result[1]) >= 300:
 		CoreEvents.sync_failed.emit(slot, "save sync got HTTP %d" % result[1])
 		return
 	CoreEvents.sync_completed.emit(slot)
+
+
+## request_completed's [result, code, headers, body] for one call to /api/save,
+## or [] when the request could not start. One HTTPRequest per call: a shared
+## one refuses a second request while the first is in flight.
+func _request(slot: int, method: HTTPClient.Method, body := "") -> Array:
+	var http := HTTPRequest.new()
+	add_child(http)
+	var headers := PackedStringArray([
+		"Authorization: Bearer " + _session,
+		"Content-Type: application/json",
+	])
+	var out: Array = []
+	if http.request("%s/api/save?slot=%d" % [_base_url, slot], headers, method, body) == OK:
+		out = await http.request_completed
+	http.queue_free()
+	return out
